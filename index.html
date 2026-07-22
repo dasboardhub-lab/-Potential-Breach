@@ -676,8 +676,6 @@
                 filteredRows++;
                 if (awbNo) {
                     totalUniqueAwbOverall.add(awbNo);
-                    if (!awbListByHub[destUz]) awbListByHub[destUz] = new Set();
-                    awbListByHub[destUz].add(awbNo);
                 }
 
                 let category = rawFop;
@@ -694,6 +692,12 @@
                 let catLower = category.toLowerCase();
                 let isExpandable = (catLower === 'mid mile' || catLower === 'transport');
                 let subColumn = isExpandable ? rawFop : null;
+
+                // HANYA TAMPUNG AWB UNTUK DISALIN JIKA KATEGORI MID MILE / TRANSPORT
+                if (awbNo && isExpandable) {
+                    if (!awbListByHub[destUz]) awbListByHub[destUz] = new Set();
+                    awbListByHub[destUz].add(awbNo);
+                }
 
                 if (!headerStructure[category]) headerStructure[category] = new Set();
                 headerStructure[category].add(subColumn);
@@ -877,7 +881,7 @@
             let hubs = Object.keys(window.currentAwbByHub).sort();
             
             if (hubs.length === 0) {
-                showToast("Kosong", "Tidak ada data AWB untuk disalin.", "error");
+                showToast("Kosong", "Tidak ada data AWB (MID Mile/Transport) untuk disalin.", "error");
                 return;
             }
 
@@ -896,7 +900,7 @@
                 el.select();
                 document.execCommand('copy');
                 document.body.removeChild(el);
-                showToast("Tersalin", `Berhasil menyalin AWB dari ${hubs.length} HUB!`);
+                showToast("Tersalin", `Berhasil menyalin AWB (MID Mile & Transport) dari ${hubs.length} HUB!`);
             }
         });
 
