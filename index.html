@@ -886,7 +886,10 @@
                 return;
             }
 
-            let textToCopy = '';
+            let selectedDate = document.getElementById('dateFilter').value;
+            let dateText = selectedDate === 'all' ? 'Semua Tanggal' : selectedDate;
+            let textToCopy = `Potential Breach EDD ${dateText} Kalsulamp\n\n`;
+            
             let hubs = Object.keys(window.awbForClipboard).sort();
             let totalCopied = 0;
             
@@ -912,7 +915,7 @@
                 }
             });
 
-            if (textToCopy.trim()) {
+            if (totalCopied > 0) {
                 const el = document.createElement('textarea');
                 el.value = textToCopy.trim();
                 document.body.appendChild(el);
