@@ -174,15 +174,9 @@
                     <i class="fa-solid fa-table-cells text-indigo-500"></i> Data Pivot FOP
                 </h2>
                 <div class="flex items-center gap-2 w-full sm:w-auto">
-                    <!-- Dropdown Wrap -->
-                    <div class="relative flex-1 sm:flex-none">
-                        <button id="copyAwbBtn" disabled class="w-full bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 px-4 py-2 rounded-lg text-sm font-semibold transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
-                            <i class="fa-solid fa-copy"></i> Salin AWB <i class="fa-solid fa-chevron-down text-[10px] ml-1"></i>
-                        </button>
-                        <div id="copyAwbDropdown" class="hidden absolute right-0 z-50 mt-2 w-56 bg-white border border-gray-200 rounded-xl shadow-xl max-h-60 overflow-y-auto py-2">
-                            <!-- Dropdown options injected by JS -->
-                        </div>
-                    </div>
+                    <button id="copyAwbBtn" disabled class="flex-1 sm:flex-none bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 px-4 py-2 rounded-lg text-sm font-semibold transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
+                        <i class="fa-solid fa-copy"></i> Salin AWB
+                    </button>
                     <button id="exportBtn" disabled class="flex-1 sm:flex-none bg-gray-900 hover:bg-gray-800 text-white px-4 py-2 rounded-lg text-sm font-semibold transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm">
                         <i class="fa-solid fa-file-export"></i> Export CSV
                     </button>
@@ -334,7 +328,6 @@
         const tableBody = document.getElementById('tableBody');
         const exportBtn = document.getElementById('exportBtn');
         const copyAwbBtn = document.getElementById('copyAwbBtn');
-        const copyAwbDropdown = document.getElementById('copyAwbDropdown');
         
         const statTotalRows = document.getElementById('stat-total-rows');
         const statTotalAwb = document.getElementById('stat-total-awb');
@@ -520,16 +513,13 @@
         });
 
         copyAwbBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            copyAwbDropdown.classList.toggle('hidden');
+            e.preventDefault();
+            performCopyAwb();
         });
 
         document.addEventListener('click', (e) => {
             if (!hubDropdownBtn.contains(e.target) && !hubDropdownMenu.contains(e.target)) {
                 hubDropdownMenu.classList.add('hidden');
-            }
-            if (!copyAwbBtn.contains(e.target) && !copyAwbDropdown.contains(e.target)) {
-                copyAwbDropdown.classList.add('hidden');
             }
         });
 
@@ -672,7 +662,7 @@
             let groupedData = {};
             let headerStructure = {}; 
             let categoryTotals = {}; 
-            window.awbByCategoryAndHub = {};
+            window.awbForClipboard = {};
             
             globalRawData.forEach(row => {
                 let rawDate = (row['expect_delivery_tm'] || row['expect_delivery_time'] || '').split(' ')[0].trim();
@@ -708,10 +698,11 @@
                 let isExpandable = (catLower === 'mid mile' || catLower === 'transport');
                 let subColumn = isExpandable ? rawFop : null;
 
-                if (awbNo) {
-                    if (!window.awbByCategoryAndHub[category]) window.awbByCategoryAndHub[category] = {};
-                    if (!window.awbByCategoryAndHub[category][destUz]) window.awbByCategoryAndHub[category][destUz] = new Set();
-                    window.awbByCategoryAndHub[category][destUz].add(awbNo);
+                if (awbNo && isExpandable) {
+                    let catName = (catLower === 'mid mile') ? 'Mid Mile' : 'Transport';
+                    if (!window.awbForClipboard[destUz]) window.awbForClipboard[destUz] = {};
+                    if (!window.awbForClipboard[destUz][catName]) window.awbForClipboard[destUz][catName] = new Set();
+                    window.awbForClipboard[destUz][catName].add(`${awbNo} ${rawFop}`);
                 }
 
                 if (!headerStructure[category]) headerStructure[category] = new Set();
@@ -887,48 +878,50 @@
             window.currentExportData.push(exportTotalRow);
 
             tableBody.innerHTML = tbodyHtml;
-            
-            // Build Copy Dropdown
-            copyAwbDropdown.innerHTML = '';
-            categories.forEach(cat => {
-                let btn = document.createElement('button');
-                btn.className = 'w-full text-left px-5 py-2.5 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-700 transition-colors font-medium flex items-center gap-3 border-b border-gray-50 last:border-0';
-                btn.innerHTML = `<i class="fa-solid fa-clipboard-list text-gray-400"></i> ${cat}`;
-                btn.onclick = () => performCopyAwb(cat);
-                copyAwbDropdown.appendChild(btn);
-            });
         }
 
-        window.performCopyAwb = function(category) {
-            copyAwbDropdown.classList.add('hidden');
-            let hubData = window.awbByCategoryAndHub[category];
-            
-            if (!hubData) {
-                showToast("Kosong", `Tidak ada data AWB untuk kategori ${category}.`, "error");
+        window.performCopyAwb = function() {
+            if (!window.awbForClipboard || Object.keys(window.awbForClipboard).length === 0) {
+                showToast("Kosong", `Tidak ada data AWB Mid Mile & Transport.`, "error");
                 return;
             }
 
             let textToCopy = '';
-            let hubs = Object.keys(hubData).sort();
+            let hubs = Object.keys(window.awbForClipboard).sort();
+            let totalCopied = 0;
             
             hubs.forEach(hub => {
-                let awbs = Array.from(hubData[hub]);
-                if (awbs.length > 0) {
-                    textToCopy += `=== HUB: ${hub || '(Blank)'} ===\n`;
-                    textToCopy += awbs.join('\n') + '\n\n';
+                let hubData = window.awbForClipboard[hub];
+                let hubText = `> ${hub || '(Blank)'}\n`;
+                let hasData = false;
+                
+                ['Mid Mile', 'Transport'].forEach(cat => {
+                    if (hubData[cat] && hubData[cat].size > 0) {
+                        hasData = true;
+                        hubText += `${cat}\n`;
+                        let awbs = Array.from(hubData[cat]);
+                        awbs.forEach(item => {
+                            hubText += `- ${item}\n`;
+                            totalCopied++;
+                        });
+                    }
+                });
+
+                if (hasData) {
+                    textToCopy += hubText + '\n';
                 }
             });
 
-            if (textToCopy) {
+            if (textToCopy.trim()) {
                 const el = document.createElement('textarea');
                 el.value = textToCopy.trim();
                 document.body.appendChild(el);
                 el.select();
                 document.execCommand('copy');
                 document.body.removeChild(el);
-                showToast("Tersalin", `Berhasil menyalin AWB (${category}) dari ${hubs.length} HUB!`);
+                showToast("Tersalin", `Berhasil menyalin ${totalCopied} AWB!`);
             } else {
-                showToast("Kosong", `Tidak ada data AWB untuk disalin pada kategori ${category}.`, "error");
+                showToast("Kosong", `Tidak ada data AWB untuk disalin.`, "error");
             }
         };
 
