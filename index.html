@@ -1,0 +1,924 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Potential Breach</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- PapaParse for CSV Parsing -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+    <!-- Font Awesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        
+        /* Custom Scrollbar for a cleaner look */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #9ca3af; }
+
+        /* Dropzone Active State */
+        .drag-active { border-color: #6366f1 !important; background-color: #eef2ff !important; }
+        
+        /* Spinner Animation */
+        .spinner { animation: spin 1s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        /* Toggle Switch Custom CSS */
+        .toggle-checkbox:checked { right: 0; border-color: #6366f1; }
+        .toggle-checkbox:checked + .toggle-label { background-color: #6366f1; }
+        .toggle-checkbox:checked + .toggle-label:after { transform: translateX(100%); border-color: white; }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800 min-h-screen flex flex-col antialiased">
+
+    <!-- Top Navbar -->
+    <nav class="bg-white border-b border-gray-200 sticky top-0 z-40 shadow-sm">
+        <div class="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <!-- Logo & Title -->
+                <div class="flex items-center gap-3">
+                    <div class="bg-indigo-600 p-2 rounded-lg text-white shadow-sm flex items-center justify-center">
+                        <i class="fa-solid fa-shield-halved text-lg"></i>
+                    </div>
+                    <div>
+                        <h1 class="text-xl font-bold text-gray-900 leading-tight">Potential Breach</h1>
+                        <p class="text-xs text-gray-500 font-medium uppercase tracking-wide">Monitoring Dashboard</p>
+                    </div>
+                </div>
+                <!-- Actions -->
+                <div class="flex items-center gap-4">
+                    <button id="openFopModalBtn" class="group bg-white border border-gray-300 hover:border-indigo-500 hover:text-indigo-600 text-gray-700 px-4 py-2 rounded-lg text-sm font-semibold transition-all shadow-sm flex items-center gap-2">
+                        <i class="fa-solid fa-layer-group text-gray-400 group-hover:text-indigo-500 transition-colors"></i> 
+                        Grouping FOP
+                    </button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="flex-1 max-w-[1600px] w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 flex flex-col gap-6">
+        
+        <!-- Top Widgets Section -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 shrink-0">
+            
+            <!-- Widget 1: Upload (col-span-5) -->
+            <div class="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 lg:col-span-5 flex flex-col relative overflow-hidden">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-sm font-bold text-gray-800 uppercase tracking-wide flex items-center gap-2">
+                        <i class="fa-solid fa-cloud-arrow-up text-indigo-500"></i> Sumber Data
+                    </h2>
+                </div>
+                
+                <div id="dropzone" class="flex-1 border-2 border-dashed border-gray-300 hover:border-indigo-400 bg-gray-50/50 hover:bg-indigo-50/30 rounded-xl p-6 flex flex-col items-center justify-center text-center transition-all cursor-pointer group">
+                    <div class="bg-white p-3 rounded-full shadow-sm border border-gray-100 mb-3 group-hover:scale-110 transition-transform">
+                        <i class="fa-solid fa-file-csv text-2xl text-indigo-400"></i>
+                    </div>
+                    <p class="text-sm font-semibold text-gray-700 mb-1">Tarik & Lepas File CSV</p>
+                    <p class="text-xs text-gray-500 max-w-[200px]">Atau klik untuk memilih file (Bisa pilih lebih dari 1)</p>
+                    <input type="file" id="fileInput" class="hidden" multiple accept=".csv">
+                </div>
+                
+                <!-- Upload Overlay (Loading & File List) -->
+                <div id="upload-overlay" class="hidden absolute inset-0 bg-white/95 backdrop-blur-sm z-10 flex-col items-center justify-center p-6 text-center">
+                    <i class="fa-solid fa-circle-notch spinner text-3xl text-indigo-600 mb-3"></i>
+                    <p class="text-sm font-semibold text-gray-800">Memproses Data...</p>
+                    <div id="file-list" class="mt-4 flex flex-wrap gap-2 justify-center max-h-[80px] overflow-y-auto w-full"></div>
+                </div>
+            </div>
+
+            <!-- Widget 2: Filters (col-span-4) -->
+            <div class="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 lg:col-span-4 flex flex-col">
+                <h2 class="text-sm font-bold text-gray-800 uppercase tracking-wide flex items-center gap-2 mb-5">
+                    <i class="fa-solid fa-sliders text-indigo-500"></i> Filter Data
+                </h2>
+                
+                <div class="flex flex-col gap-5 flex-1">
+                    <!-- Date Filter -->
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-500 mb-1.5 uppercase tracking-wide">Expect Delivery Time</label>
+                        <div class="relative">
+                            <select id="dateFilter" disabled class="w-full appearance-none border border-gray-300 rounded-lg pl-4 pr-10 py-2.5 bg-white text-gray-700 text-sm font-medium focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none disabled:bg-gray-50 disabled:text-gray-400 transition-shadow">
+                                <option value="all">Semua Tanggal</option>
+                            </select>
+                            <i class="fa-solid fa-calendar-day absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"></i>
+                        </div>
+                    </div>
+
+                    <!-- Hub Filter -->
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-500 mb-1.5 uppercase tracking-wide">Pilih HUB</label>
+                        <div class="relative">
+                            <button id="hubDropdownBtn" disabled class="w-full border border-gray-300 rounded-lg pl-4 pr-10 py-2.5 bg-white text-gray-700 text-sm font-medium text-left focus:ring-2 focus:ring-indigo-500 outline-none disabled:bg-gray-50 disabled:text-gray-400 transition-shadow flex items-center justify-between">
+                                <span id="hubDropdownText" class="truncate">Semua HUB</span>
+                                <i class="fa-solid fa-chevron-down text-gray-400"></i>
+                            </button>
+                            <!-- Dropdown Menu -->
+                            <div id="hubDropdownMenu" class="hidden absolute z-30 w-full mt-2 bg-white border border-gray-200 rounded-xl shadow-xl max-h-60 overflow-y-auto p-2">
+                                <div class="flex items-center gap-3 p-2 border-b border-gray-100 mb-1 hover:bg-gray-50 rounded-lg transition-colors cursor-pointer" onclick="document.getElementById('selectAllHubs').click()">
+                                    <input type="checkbox" id="selectAllHubs" checked class="w-4 h-4 text-indigo-600 rounded border-gray-300 focus:ring-indigo-500 cursor-pointer">
+                                    <label class="text-sm font-semibold text-gray-800 cursor-pointer flex-1">Pilih Semua</label>
+                                </div>
+                                <div id="hubCheckboxes" class="flex flex-col gap-0.5">
+                                    <!-- Dynamic Checkboxes -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Widget 3: Metrics & Toggles (col-span-3) -->
+            <div class="lg:col-span-3 flex flex-col gap-4">
+                <!-- Toggle Card -->
+                <div class="bg-white rounded-2xl shadow-sm border border-gray-200 p-5 flex items-center justify-between">
+                    <div>
+                        <p class="text-sm font-bold text-gray-800">Dest Staging</p>
+                        <p class="text-xs text-gray-500 mt-0.5">Tampilkan rincian staging</p>
+                    </div>
+                    <!-- Modern Toggle -->
+                    <div class="relative inline-block w-12 h-6 align-middle select-none transition duration-200 ease-in">
+                        <input type="checkbox" name="toggle" id="showDestStagingToggle" checked disabled class="toggle-checkbox absolute block w-6 h-6 rounded-full bg-white border-4 border-gray-300 appearance-none cursor-pointer transition-all duration-300 z-10 top-0 left-0 disabled:opacity-50"/>
+                        <label for="showDestStagingToggle" class="toggle-label block overflow-hidden h-6 rounded-full bg-gray-300 cursor-pointer transition-colors duration-300"></label>
+                    </div>
+                </div>
+                
+                <!-- Metrics -->
+                <div class="grid grid-cols-2 gap-4 flex-1">
+                    <div class="bg-white rounded-2xl shadow-sm border border-gray-200 p-4 flex flex-col justify-center relative overflow-hidden">
+                        <i class="fa-solid fa-list-ol absolute -right-3 -bottom-3 text-5xl text-gray-50 opacity-50"></i>
+                        <p class="text-[11px] text-gray-500 font-bold uppercase tracking-wider mb-1 z-10">Total Baris</p>
+                        <p id="stat-total-rows" class="text-2xl font-black text-gray-900 z-10">0</p>
+                    </div>
+                    <div class="bg-gradient-to-br from-indigo-50 to-white rounded-2xl shadow-sm border border-indigo-100 p-4 flex flex-col justify-center relative overflow-hidden">
+                        <i class="fa-solid fa-box absolute -right-3 -bottom-3 text-5xl text-indigo-100 opacity-50"></i>
+                        <p class="text-[11px] text-indigo-600 font-bold uppercase tracking-wider mb-1 z-10">Total AWB</p>
+                        <p id="stat-total-awb" class="text-2xl font-black text-indigo-900 z-10">0</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Table Section -->
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-200 flex-1 flex flex-col overflow-hidden min-h-[65vh]">
+            
+            <!-- Table Header Actions -->
+            <div class="px-6 py-4 border-b border-gray-200 flex flex-col sm:flex-row justify-between items-center gap-4 bg-white z-20">
+                <h2 class="text-base font-bold text-gray-800 flex items-center gap-2">
+                    <i class="fa-solid fa-table-cells text-indigo-500"></i> Data Pivot FOP
+                </h2>
+                <div class="flex items-center gap-2 w-full sm:w-auto">
+                    <button id="copyAwbBtn" disabled class="flex-1 sm:flex-none bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 px-4 py-2 rounded-lg text-sm font-semibold transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
+                        <i class="fa-solid fa-copy"></i> Salin AWB
+                    </button>
+                    <button id="exportBtn" disabled class="flex-1 sm:flex-none bg-gray-900 hover:bg-gray-800 text-white px-4 py-2 rounded-lg text-sm font-semibold transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm">
+                        <i class="fa-solid fa-file-export"></i> Export CSV
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Table Wrapper (Scrollable) -->
+            <div class="flex-1 overflow-auto bg-gray-50/30 relative" id="tableWrapper">
+                
+                <!-- Empty State -->
+                <div id="empty-state" class="absolute inset-0 flex flex-col items-center justify-center text-gray-400 p-8 z-10">
+                    <div class="bg-gray-50 p-6 rounded-full border border-gray-100 mb-4">
+                        <i class="fa-solid fa-folder-open text-5xl text-gray-300"></i>
+                    </div>
+                    <p class="text-lg font-bold text-gray-600">Belum Ada Data</p>
+                    <p class="text-sm mt-1 max-w-sm text-center">Tarik dan lepas file CSV laporan Anda pada area sumber data di atas untuk mulai menganalisis.</p>
+                </div>
+
+                <!-- Main Data Table -->
+                <table id="dataTable" class="w-full text-left border-collapse hidden">
+                    <thead id="tableHead" class="bg-gray-50">
+                        <!-- Dynamic Header goes here -->
+                    </thead>
+                    <tbody id="tableBody" class="divide-y divide-gray-100 bg-white">
+                        <!-- Dynamic Rows go here -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+
+    <!-- Modal Pengaturan FOP -->
+    <div id="fopModal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4">
+        <!-- Backdrop Blur -->
+        <div class="absolute inset-0 bg-gray-900/40 backdrop-blur-sm transition-opacity" id="fopModalBackdrop"></div>
+        
+        <!-- Modal Content -->
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-3xl overflow-hidden flex flex-col max-h-[90vh] relative z-10 transform scale-95 opacity-0 transition-all duration-300" id="fopModalContent">
+            <!-- Header -->
+            <div class="px-6 py-5 border-b border-gray-100 flex justify-between items-center bg-white">
+                <div>
+                    <h3 class="font-bold text-lg text-gray-900">Pengaturan Grouping FOP</h3>
+                    <p class="text-xs text-gray-500 mt-0.5">Kelompokkan beberapa metode pembayaran menjadi satu kategori.</p>
+                </div>
+                <button id="closeFopModalBtn" class="text-gray-400 hover:text-gray-600 bg-gray-50 hover:bg-gray-100 w-8 h-8 rounded-full flex items-center justify-center transition-colors">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+            
+            <!-- Body -->
+            <div class="p-6 overflow-y-auto flex-1 bg-gray-50/50">
+                
+                <!-- Form Input -->
+                <div class="bg-white p-5 rounded-xl border border-gray-200 shadow-sm mb-6">
+                    <div class="flex flex-col sm:flex-row gap-4 items-end">
+                        <div class="flex-1 w-full">
+                            <label class="block text-xs font-bold text-gray-700 mb-1.5 uppercase tracking-wide">Nama Kategori Utama</label>
+                            <input type="text" id="fopCategoryInput" class="w-full border border-gray-300 rounded-lg px-4 py-2.5 bg-white text-gray-800 text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-shadow placeholder:text-gray-300" placeholder="Contoh: Tunai">
+                        </div>
+                        <div class="flex-[2] w-full">
+                            <label class="block text-xs font-bold text-gray-700 mb-1.5 uppercase tracking-wide">Nilai FOP (Gunakan koma)</label>
+                            <input type="text" id="fopValuesInput" class="w-full border border-gray-300 rounded-lg px-4 py-2.5 bg-white text-gray-800 text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-shadow placeholder:text-gray-300" placeholder="Contoh: COD, CASH, CASH_ON_PICKUP">
+                        </div>
+                        <div class="flex gap-2 w-full sm:w-auto">
+                            <button id="addFopGroupBtn" class="bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2.5 rounded-lg text-sm font-semibold transition-all shadow-sm w-full sm:w-auto flex items-center justify-center gap-2 active:scale-95">
+                                <i class="fa-solid fa-plus"></i> <span>Tambah</span>
+                            </button>
+                            <button id="cancelEditFopBtn" class="hidden bg-white hover:bg-gray-50 border border-gray-300 text-gray-700 px-5 py-2.5 rounded-lg text-sm font-semibold transition-colors w-full sm:w-auto">
+                                Batal
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Rules Table -->
+                <h4 class="text-sm font-bold text-gray-800 mb-3 uppercase tracking-wide">Daftar Aturan Grouping</h4>
+                <div class="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm">
+                    <table class="w-full text-left text-sm text-gray-700">
+                        <thead class="bg-gray-50 text-gray-500 border-b border-gray-200 uppercase text-[11px] font-bold tracking-wider">
+                            <tr>
+                                <th class="px-5 py-3 w-1/3">Kategori</th>
+                                <th class="px-5 py-3">Termasuk Nilai FOP</th>
+                                <th class="px-5 py-3 text-center w-20">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody id="fopGroupTableBody" class="divide-y divide-gray-100">
+                            <!-- Dynamic rows -->
+                        </tbody>
+                    </table>
+                    <div id="empty-fop-state" class="text-center py-10 flex flex-col items-center text-gray-400">
+                        <i class="fa-solid fa-clipboard-list text-3xl mb-3 text-gray-300"></i>
+                        <p class="font-medium text-sm">Belum ada aturan grouping.</p>
+                        <p class="text-xs mt-1">Gunakan form di atas untuk membuat aturan baru.</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Footer -->
+            <div class="px-6 py-4 border-t border-gray-100 bg-gray-50 flex justify-end">
+                <button id="saveFopModalBtn" class="bg-gray-900 hover:bg-black text-white px-6 py-2.5 rounded-lg text-sm font-semibold transition-colors shadow-sm">
+                    Tutup & Terapkan
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modern Toast Notification -->
+    <div id="toast" class="fixed bottom-6 right-6 bg-gray-900/95 backdrop-blur-md text-white pl-4 pr-5 py-3 rounded-xl shadow-2xl transform transition-all duration-300 translate-y-24 opacity-0 pointer-events-none z-[70] flex items-center gap-3 border border-gray-700">
+        <div id="toastIconWrapper" class="bg-emerald-500/20 p-1.5 rounded-full flex items-center justify-center">
+            <i id="toastIcon" class="fa-solid fa-check text-emerald-400 text-sm"></i>
+        </div>
+        <div>
+            <p id="toastTitle" class="text-sm font-bold leading-tight">Sukses</p>
+            <p id="toastMessage" class="text-xs text-gray-300 mt-0.5">Pesan berhasil</p>
+        </div>
+    </div>
+
+    <script>
+        // State variables
+        let globalRawData = [];
+        let availableDates = new Set();
+        let availableHubs = new Set();
+        let uniqueFopCodes = new Set();
+        let fopGroupConfig = JSON.parse(localStorage.getItem('awbFopGroupConfig')) || [];
+        let editingFopIndex = -1;
+        
+        function saveFopConfigToStorage() {
+            localStorage.setItem('awbFopGroupConfig', JSON.stringify(fopGroupConfig));
+        }
+
+        // DOM Elements
+        const dropzone = document.getElementById('dropzone');
+        const dropzoneWrapper = dropzone.parentElement;
+        const fileInput = document.getElementById('fileInput');
+        const uploadOverlay = document.getElementById('upload-overlay');
+        const fileListContainer = document.getElementById('file-list');
+        
+        const dateFilter = document.getElementById('dateFilter');
+        const hubDropdownBtn = document.getElementById('hubDropdownBtn');
+        const hubDropdownText = document.getElementById('hubDropdownText');
+        const hubDropdownMenu = document.getElementById('hubDropdownMenu');
+        const selectAllHubs = document.getElementById('selectAllHubs');
+        const hubCheckboxes = document.getElementById('hubCheckboxes');
+        const showDestStagingToggle = document.getElementById('showDestStagingToggle');
+        
+        const emptyState = document.getElementById('empty-state');
+        const dataTable = document.getElementById('dataTable');
+        const tableHead = document.getElementById('tableHead');
+        const tableBody = document.getElementById('tableBody');
+        const exportBtn = document.getElementById('exportBtn');
+        const copyAwbBtn = document.getElementById('copyAwbBtn');
+        
+        const statTotalRows = document.getElementById('stat-total-rows');
+        const statTotalAwb = document.getElementById('stat-total-awb');
+
+        // Modal Elements
+        const fopModal = document.getElementById('fopModal');
+        const fopModalContent = document.getElementById('fopModalContent');
+        const fopModalBackdrop = document.getElementById('fopModalBackdrop');
+        const openFopModalBtn = document.getElementById('openFopModalBtn');
+        const closeFopModalBtn = document.getElementById('closeFopModalBtn');
+        const saveFopModalBtn = document.getElementById('saveFopModalBtn');
+        
+        const fopCategoryInput = document.getElementById('fopCategoryInput');
+        const fopValuesInput = document.getElementById('fopValuesInput');
+        const addFopGroupBtn = document.getElementById('addFopGroupBtn');
+        const cancelEditFopBtn = document.getElementById('cancelEditFopBtn');
+        const fopGroupTableBody = document.getElementById('fopGroupTableBody');
+        const emptyFopState = document.getElementById('empty-fop-state');
+
+        function showToast(title, message, type = 'success') {
+            const toast = document.getElementById('toast');
+            const toastTitle = document.getElementById('toastTitle');
+            const toastMessage = document.getElementById('toastMessage');
+            const toastIcon = document.getElementById('toastIcon');
+            const toastIconWrapper = document.getElementById('toastIconWrapper');
+            
+            toastTitle.textContent = title;
+            toastMessage.textContent = message;
+            
+            if (type === 'error') {
+                toastIcon.className = 'fa-solid fa-exclamation text-red-400 text-sm';
+                toastIconWrapper.className = 'bg-red-500/20 p-1.5 rounded-full flex items-center justify-center';
+            } else {
+                toastIcon.className = 'fa-solid fa-check text-emerald-400 text-sm';
+                toastIconWrapper.className = 'bg-emerald-500/20 p-1.5 rounded-full flex items-center justify-center';
+            }
+            
+            toast.classList.remove('translate-y-24', 'opacity-0');
+            setTimeout(() => {
+                toast.classList.add('translate-y-24', 'opacity-0');
+            }, 3500);
+        }
+
+        function openModal() {
+            renderFopGroupList();
+            fopModal.classList.remove('hidden');
+            // Small delay to allow display block to render before animation
+            setTimeout(() => {
+                fopModalContent.classList.remove('scale-95', 'opacity-0');
+                fopModalContent.classList.add('scale-100', 'opacity-100');
+            }, 10);
+        }
+
+        function closeModal() {
+            fopModalContent.classList.remove('scale-100', 'opacity-100');
+            fopModalContent.classList.add('scale-95', 'opacity-0');
+            setTimeout(() => {
+                fopModal.classList.add('hidden');
+                if (globalRawData.length > 0) {
+                    renderTable();
+                }
+            }, 300); // Wait for transition
+        }
+
+        openFopModalBtn.addEventListener('click', openModal);
+        closeFopModalBtn.addEventListener('click', closeModal);
+        saveFopModalBtn.addEventListener('click', closeModal);
+        fopModalBackdrop.addEventListener('click', closeModal);
+
+        function resetFopForm() {
+            fopCategoryInput.value = '';
+            fopValuesInput.value = '';
+            editingFopIndex = -1;
+            addFopGroupBtn.innerHTML = '<i class="fa-solid fa-plus"></i> <span>Tambah</span>';
+            cancelEditFopBtn.classList.add('hidden');
+        }
+
+        cancelEditFopBtn.addEventListener('click', resetFopForm);
+
+        addFopGroupBtn.addEventListener('click', () => {
+            let categoryName = fopCategoryInput.value.trim();
+            let fopValuesRaw = fopValuesInput.value.trim();
+
+            if (!categoryName || !fopValuesRaw) {
+                showToast("Error", "Harap isi Nama Kategori dan Nilai FOP.", "error");
+                return;
+            }
+
+            let fopValuesArray = fopValuesRaw.split(',').map(v => v.trim()).filter(v => v !== '');
+            if (fopValuesArray.length === 0) return;
+
+            if (editingFopIndex >= 0) {
+                fopGroupConfig[editingFopIndex] = { category: categoryName, items: fopValuesArray };
+                showToast("Sukses", "Aturan berhasil diperbarui.");
+            } else {
+                fopGroupConfig.push({ category: categoryName, items: fopValuesArray });
+                showToast("Sukses", "Aturan baru ditambahkan.");
+            }
+
+            saveFopConfigToStorage();
+            resetFopForm();
+            renderFopGroupList();
+        });
+
+        window.editFopGroup = function(index) {
+            editingFopIndex = index;
+            let group = fopGroupConfig[index];
+            fopCategoryInput.value = group.category;
+            fopValuesInput.value = group.items.join(', ');
+            
+            addFopGroupBtn.innerHTML = '<i class="fa-solid fa-check"></i> <span>Simpan Edit</span>';
+            cancelEditFopBtn.classList.remove('hidden');
+            fopCategoryInput.focus();
+        }
+
+        window.deleteFopGroup = function(index) {
+            fopGroupConfig.splice(index, 1);
+            saveFopConfigToStorage();
+            if (editingFopIndex === index) resetFopForm();
+            renderFopGroupList();
+            showToast("Dihapus", "Aturan berhasil dihapus.");
+        }
+
+        function renderFopGroupList() {
+            if (fopGroupConfig.length === 0) {
+                emptyFopState.classList.remove('hidden');
+                fopGroupTableBody.innerHTML = '';
+                return;
+            }
+
+            emptyFopState.classList.add('hidden');
+            let html = '';
+            fopGroupConfig.forEach((group, index) => {
+                let itemsBadges = group.items.map(item => `<span class="inline-block bg-indigo-50 border border-indigo-100 text-indigo-700 px-2 py-1 rounded-md text-[10px] font-bold mb-1 mr-1.5 shadow-sm">${item}</span>`).join('');
+                
+                html += `
+                <tr class="hover:bg-gray-50 transition-colors group">
+                    <td class="px-5 py-3 font-bold text-gray-900 border-b border-gray-100">${group.category}</td>
+                    <td class="px-5 py-3 border-b border-gray-100">${itemsBadges}</td>
+                    <td class="px-5 py-3 text-center whitespace-nowrap border-b border-gray-100">
+                        <div class="flex items-center justify-center gap-2 opacity-50 group-hover:opacity-100 transition-opacity">
+                            <button onclick="editFopGroup(${index})" class="text-gray-500 hover:text-indigo-600 bg-white hover:bg-indigo-50 border border-gray-200 w-7 h-7 rounded flex items-center justify-center shadow-sm transition-colors" title="Edit">
+                                <i class="fa-solid fa-pen text-[10px]"></i>
+                            </button>
+                            <button onclick="deleteFopGroup(${index})" class="text-gray-500 hover:text-red-600 bg-white hover:bg-red-50 border border-gray-200 w-7 h-7 rounded flex items-center justify-center shadow-sm transition-colors" title="Hapus">
+                                <i class="fa-solid fa-trash-can text-[10px]"></i>
+                            </button>
+                        </div>
+                    </td>
+                </tr>`;
+            });
+            fopGroupTableBody.innerHTML = html;
+        }
+
+        dropzone.addEventListener('click', () => fileInput.click());
+        
+        dropzone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropzone.classList.add('drag-active');
+        });
+
+        dropzone.addEventListener('dragleave', (e) => {
+            e.preventDefault();
+            dropzone.classList.remove('drag-active');
+        });
+
+        dropzone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropzone.classList.remove('drag-active');
+            if (e.dataTransfer.files.length > 0) handleFiles(e.dataTransfer.files);
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) handleFiles(e.target.files);
+        });
+
+        dateFilter.addEventListener('change', renderTable);
+        showDestStagingToggle.addEventListener('change', renderTable);
+
+        hubDropdownBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            hubDropdownMenu.classList.toggle('hidden');
+        });
+
+        document.addEventListener('click', (e) => {
+            if (!hubDropdownBtn.contains(e.target) && !hubDropdownMenu.contains(e.target)) {
+                hubDropdownMenu.classList.add('hidden');
+            }
+        });
+
+        selectAllHubs.addEventListener('change', (e) => {
+            const isChecked = e.target.checked;
+            const checkboxes = hubCheckboxes.querySelectorAll('input[type="checkbox"]');
+            checkboxes.forEach(cb => cb.checked = isChecked);
+            updateHubDropdownText();
+            renderTable();
+        });
+
+        function updateHubDropdownText() {
+            const checkboxes = hubCheckboxes.querySelectorAll('input[type="checkbox"]');
+            const checkedBoxes = Array.from(checkboxes).filter(cb => cb.checked);
+            
+            if (checkedBoxes.length === 0) {
+                hubDropdownText.textContent = "Pilih HUB";
+            } else if (checkedBoxes.length === checkboxes.length) {
+                hubDropdownText.textContent = "Semua HUB";
+            } else if (checkedBoxes.length <= 3) {
+                hubDropdownText.textContent = checkedBoxes.map(cb => cb.value).join(', ');
+            } else {
+                hubDropdownText.textContent = `${checkedBoxes.length} HUB dipilih`;
+            }
+            selectAllHubs.checked = (checkedBoxes.length === checkboxes.length);
+        }
+
+        hubCheckboxes.addEventListener('change', (e) => {
+            if (e.target.tagName.toLowerCase() === 'input') {
+                updateHubDropdownText();
+                renderTable();
+            }
+        });
+
+        async function handleFiles(files) {
+            const validFiles = Array.from(files).filter(f => f.name.toLowerCase().endsWith('.csv'));
+            
+            if (validFiles.length === 0) {
+                showToast("Format Salah", "Harap upload file berformat CSV.", "error");
+                return;
+            }
+
+            uploadOverlay.classList.remove('hidden');
+            uploadOverlay.classList.add('flex');
+            
+            validFiles.forEach(file => {
+                const badge = document.createElement('span');
+                badge.className = 'bg-indigo-50 border border-indigo-100 text-indigo-700 text-[10px] px-2.5 py-1 rounded-md flex items-center gap-1.5 shadow-sm font-bold';
+                badge.innerHTML = `<i class="fa-solid fa-file-csv text-indigo-500"></i> ${file.name}`;
+                fileListContainer.appendChild(badge);
+            });
+
+            try {
+                const parsePromises = validFiles.map(file => parseCSVFile(file));
+                const results = await Promise.all(parsePromises);
+                
+                results.forEach(fileData => {
+                    globalRawData = globalRawData.concat(fileData);
+                });
+
+                processInitialData();
+                renderTable();
+
+                dateFilter.disabled = false;
+                hubDropdownBtn.disabled = false;
+                showDestStagingToggle.disabled = false;
+                exportBtn.disabled = false;
+                copyAwbBtn.disabled = false;
+                
+                showToast("Sukses", `${validFiles.length} File berhasil diproses.`);
+
+            } catch (error) {
+                console.error("Error parsing files:", error);
+                showToast("Gagal", "Terjadi kesalahan saat membaca CSV.", "error");
+            } finally {
+                uploadOverlay.classList.add('hidden');
+                uploadOverlay.classList.remove('flex');
+            }
+        }
+
+        function parseCSVFile(file) {
+            return new Promise((resolve, reject) => {
+                Papa.parse(file, {
+                    header: true,
+                    skipEmptyLines: true,
+                    transformHeader: h => h.trim().toLowerCase(),
+                    complete: function(results) { resolve(results.data); },
+                    error: function(error) { reject(error); }
+                });
+            });
+        }
+
+        function processInitialData() {
+            availableDates.clear();
+            availableHubs.clear();
+            
+            globalRawData.forEach(row => {
+                let rawDate = row['expect_delivery_tm'] || row['expect_delivery_time'] || '';
+                if (rawDate) {
+                    let datePart = rawDate.split(' ')[0].trim();
+                    if(datePart) availableDates.add(datePart);
+                }
+
+                let rawDestUz = row['destination_uz'] || '';
+                let destUz = rawDestUz.substring(0, 3).toUpperCase();
+                if(destUz) availableHubs.add(destUz);
+            });
+
+            dateFilter.innerHTML = '<option value="all">Semua Tanggal</option>';
+            let sortedDates = Array.from(availableDates).sort();
+            sortedDates.forEach(date => {
+                let opt = document.createElement('option');
+                opt.value = date;
+                opt.textContent = date;
+                dateFilter.appendChild(opt);
+            });
+
+            hubCheckboxes.innerHTML = '';
+            let sortedHubs = Array.from(availableHubs).sort();
+            sortedHubs.forEach(hub => {
+                let div = document.createElement('div');
+                div.className = "flex items-center gap-3 p-2 hover:bg-gray-50 rounded-lg cursor-pointer transition-colors";
+                div.innerHTML = `
+                    <input type="checkbox" id="hub_${hub}" value="${hub}" checked class="w-4 h-4 text-indigo-600 rounded border-gray-300 focus:ring-indigo-500 cursor-pointer">
+                    <label for="hub_${hub}" class="text-sm font-semibold text-gray-800 cursor-pointer flex-1">${hub}</label>
+                `;
+                hubCheckboxes.appendChild(div);
+            });
+            selectAllHubs.checked = true;
+            updateHubDropdownText();
+        }
+
+        function renderTable() {
+            const selectedDate = dateFilter.value;
+            const checkedHubs = Array.from(hubCheckboxes.querySelectorAll('input[type="checkbox"]:checked')).map(cb => cb.value);
+            const showStaging = showDestStagingToggle.checked;
+            let filteredRows = 0;
+            let totalUniqueAwbOverall = new Set();
+            
+            let groupedData = {};
+            let headerStructure = {}; 
+            let categoryTotals = {}; 
+            let awbListByHub = {};
+            
+            globalRawData.forEach(row => {
+                let rawDate = (row['expect_delivery_tm'] || row['expect_delivery_time'] || '').split(' ')[0].trim();
+                let rawDestUz = row['destination_uz'] || '';
+                let destUz = rawDestUz.substring(0, 3).toUpperCase();
+                
+                if (selectedDate !== 'all' && rawDate !== selectedDate) return; 
+                if (!checkedHubs.includes(destUz) && destUz !== '') return;
+
+                let destStaging = row['destination_staging'] || '(Blank)';
+                let rawFop = row['fop_code_internal'] || '(Blank)';
+                let awbNo = row['awb_no'];
+
+                if (!destUz && destStaging === '(Blank)' && !awbNo) return; 
+                
+                filteredRows++;
+                if (awbNo) {
+                    totalUniqueAwbOverall.add(awbNo);
+                    if (!awbListByHub[destUz]) awbListByHub[destUz] = new Set();
+                    awbListByHub[destUz].add(awbNo);
+                }
+
+                let category = rawFop;
+                let normalizedRaw = rawFop.trim().toLowerCase();
+                
+                for (let group of fopGroupConfig) {
+                    let isMatch = group.items.find(val => val.trim().toLowerCase() === normalizedRaw);
+                    if (isMatch) {
+                        category = group.category;
+                        break;
+                    }
+                }
+
+                let catLower = category.toLowerCase();
+                let isExpandable = (catLower === 'mid mile' || catLower === 'transport');
+                let subColumn = isExpandable ? rawFop : null;
+
+                if (!headerStructure[category]) headerStructure[category] = new Set();
+                headerStructure[category].add(subColumn);
+
+                if (!groupedData[destUz]) groupedData[destUz] = {};
+                let stagingKey = showStaging ? destStaging : 'ALL';
+                if (!groupedData[destUz][stagingKey]) groupedData[destUz][stagingKey] = { fopData: {} };
+
+                let fopKey = category + (subColumn ? '|||' + subColumn : '');
+                if (!groupedData[destUz][stagingKey].fopData[fopKey]) {
+                    groupedData[destUz][stagingKey].fopData[fopKey] = new Set();
+                }
+
+                if (awbNo) {
+                    let isNewAwb = !groupedData[destUz][stagingKey].fopData[fopKey].has(awbNo);
+                    groupedData[destUz][stagingKey].fopData[fopKey].add(awbNo);
+                    if (isNewAwb) categoryTotals[category] = (categoryTotals[category] || 0) + 1;
+                }
+            });
+
+            statTotalRows.textContent = filteredRows.toLocaleString('id-ID');
+            statTotalAwb.textContent = totalUniqueAwbOverall.size.toLocaleString('id-ID');
+
+            let categories = Object.keys(headerStructure).sort((a, b) => {
+                let aLower = a.toLowerCase();
+                let bLower = b.toLowerCase();
+                if (aLower === 'mid mile') return -1;
+                if (bLower === 'mid mile') return 1;
+                if (aLower === 'transport') return -1;
+                if (bLower === 'transport') return 1;
+                return (categoryTotals[b] || 0) - (categoryTotals[a] || 0);
+            });
+
+            window.currentExportHeaders = ['HUB']; 
+            if(showStaging) window.currentExportHeaders.push('Dest Staging');
+            
+            // Build Headers UI
+            let theadHtml = `<tr>
+                <th rowspan="2" class="sticky left-0 z-20 bg-gray-50 px-5 py-4 text-left text-xs font-bold text-gray-600 uppercase tracking-wider border-b-2 border-r border-gray-200 shadow-[inset_-1px_0_0_0_#e5e7eb] align-middle">HUB</th>
+                ${showStaging ? '<th rowspan="2" class="bg-gray-50 px-5 py-4 text-left text-xs font-bold text-gray-600 uppercase tracking-wider border-b-2 border-gray-200 align-middle whitespace-nowrap">Dest Staging</th>' : ''}`;
+            
+            let row2Html = `<tr>`;
+            let hasRow2 = false;
+
+            categories.forEach(cat => {
+                let subCols = Array.from(headerStructure[cat]).sort();
+                let isExpandable = subCols.length > 0 && subCols[0] !== null;
+
+                if (isExpandable) {
+                    hasRow2 = true;
+                    theadHtml += `<th colspan="${subCols.length}" class="bg-gray-100 px-5 py-2 text-center text-[11px] font-black text-gray-700 uppercase tracking-wider border-b border-l border-gray-200">${cat}</th>`;
+                    subCols.forEach(sub => {
+                        row2Html += `<th class="bg-gray-50 px-5 py-2 text-right text-[10px] font-bold text-gray-500 uppercase tracking-wider border-b border-l border-gray-200 whitespace-nowrap">${sub}</th>`;
+                        window.currentExportHeaders.push(`${cat} - ${sub}`);
+                    });
+                } else {
+                    theadHtml += `<th rowspan="2" class="bg-gray-50 px-5 py-4 text-right text-[11px] font-black text-gray-600 uppercase tracking-wider border-b-2 border-l border-gray-200 align-middle whitespace-nowrap">${cat}</th>`;
+                    window.currentExportHeaders.push(cat);
+                }
+            });
+
+            theadHtml += `<th rowspan="2" class="bg-indigo-50 px-5 py-4 text-right text-[11px] font-black text-indigo-700 uppercase tracking-wider border-b-2 border-l border-indigo-200 align-middle">Grand Total</th></tr>`;
+            window.currentExportHeaders.push('Grand Total');
+
+            if (hasRow2) {
+                row2Html += `</tr>`;
+                theadHtml += row2Html;
+            }
+
+            tableHead.innerHTML = theadHtml;
+
+            // Build Rows UI
+            let tbodyHtml = '';
+            let hubKeys = Object.keys(groupedData).sort(); 
+
+            if (hubKeys.length === 0) {
+                emptyState.classList.remove('hidden');
+                dataTable.classList.add('hidden');
+                return;
+            }
+
+            emptyState.classList.add('hidden');
+            dataTable.classList.remove('hidden');
+
+            window.currentExportData = [];
+            let columnTotals = {};
+            let grandTotalAllRows = 0;
+
+            hubKeys.forEach(hub => {
+                let stagingKeys = Object.keys(groupedData[hub]).sort();
+                let rowspan = stagingKeys.length;
+
+                stagingKeys.forEach((staging, index) => {
+                    let item = groupedData[hub][staging];
+                    let rowTotal = 0;
+                    let exportRow = [hub];
+                    if(showStaging) exportRow.push(staging === 'ALL' ? '-' : staging);
+                    
+                    tbodyHtml += `<tr class="hover:bg-gray-50/70 transition-colors group">`;
+                    
+                    if (index === 0) {
+                        tbodyHtml += `<td rowspan="${showStaging ? rowspan : 1}" class="sticky left-0 z-10 bg-white group-hover:bg-gray-50 px-5 py-3 text-sm font-bold text-gray-900 border-b border-r border-gray-100 shadow-[inset_-1px_0_0_0_#e5e7eb] align-top whitespace-nowrap transition-colors">${hub || '-'}</td>`;
+                    }
+                    
+                    if (showStaging) {
+                        tbodyHtml += `<td class="px-5 py-3 text-sm font-medium text-gray-600 border-b border-gray-100 whitespace-nowrap">${staging}</td>`;
+                    }
+                    
+                    let cellHtmls = [];
+                    categories.forEach(cat => {
+                        let subCols = Array.from(headerStructure[cat]).sort();
+                        let isExpandable = subCols.length > 0 && subCols[0] !== null;
+                        
+                        let formatCount = (count) => count > 0 ? count.toLocaleString('id-ID') : '<span class="text-gray-300">-</span>';
+
+                        if (isExpandable) {
+                            subCols.forEach(sub => {
+                                let fopKey = cat + '|||' + sub;
+                                let count = item.fopData[fopKey] ? item.fopData[fopKey].size : 0;
+                                rowTotal += count;
+                                columnTotals[fopKey] = (columnTotals[fopKey] || 0) + count;
+                                cellHtmls.push(`<td class="px-5 py-3 text-right text-sm font-medium text-gray-700 border-b border-l border-gray-100 tabular-nums">${formatCount(count)}</td>`);
+                                exportRow.push(count);
+                            });
+                        } else {
+                            let fopKey = cat;
+                            let count = item.fopData[fopKey] ? item.fopData[fopKey].size : 0;
+                            rowTotal += count;
+                            columnTotals[fopKey] = (columnTotals[fopKey] || 0) + count;
+                            cellHtmls.push(`<td class="px-5 py-3 text-right text-sm font-medium text-gray-700 border-b border-l border-gray-100 tabular-nums">${formatCount(count)}</td>`);
+                            exportRow.push(count);
+                        }
+                    });
+
+                    tbodyHtml += cellHtmls.join('');
+                    tbodyHtml += `<td class="px-5 py-3 text-right text-sm font-bold text-indigo-700 border-b border-l border-indigo-100 bg-indigo-50/30 tabular-nums">${rowTotal.toLocaleString('id-ID')}</td></tr>`;
+                    
+                    grandTotalAllRows += rowTotal;
+                    exportRow.push(rowTotal);
+                    window.currentExportData.push(exportRow);
+                });
+            });
+
+            let colspanStaging = showStaging ? 2 : 1;
+            tbodyHtml += `<tr class="bg-gray-900 text-white font-bold sticky bottom-0 z-20 shadow-[0_-4px_10px_rgba(0,0,0,0.1)]">`;
+            tbodyHtml += `<td colspan="${colspanStaging}" class="sticky left-0 bg-gray-900 px-5 py-4 text-right text-[11px] uppercase tracking-wider border-r border-gray-700 shadow-[inset_-1px_0_0_0_#374151]">TOTAL KESELURUHAN</td>`;
+            
+            let exportTotalRow = ['Total Keseluruhan'];
+            if (showStaging) exportTotalRow.push('');
+
+            categories.forEach(cat => {
+                let subCols = Array.from(headerStructure[cat]).sort();
+                let isExpandable = subCols.length > 0 && subCols[0] !== null;
+
+                if (isExpandable) {
+                    subCols.forEach(sub => {
+                        let fopKey = cat + '|||' + sub;
+                        let colTot = columnTotals[fopKey] || 0;
+                        tbodyHtml += `<td class="px-5 py-4 text-right text-sm border-l border-gray-700 tabular-nums">${colTot.toLocaleString('id-ID')}</td>`;
+                        exportTotalRow.push(colTot);
+                    });
+                } else {
+                    let fopKey = cat;
+                    let colTot = columnTotals[fopKey] || 0;
+                    tbodyHtml += `<td class="px-5 py-4 text-right text-sm border-l border-gray-700 tabular-nums">${colTot.toLocaleString('id-ID')}</td>`;
+                    exportTotalRow.push(colTot);
+                }
+            });
+
+            tbodyHtml += `<td class="px-5 py-4 text-right text-base text-indigo-300 bg-gray-800 border-l border-gray-700 tabular-nums">${grandTotalAllRows.toLocaleString('id-ID')}</td></tr>`;
+            exportTotalRow.push(grandTotalAllRows);
+            window.currentExportData.push(exportTotalRow);
+
+            tableBody.innerHTML = tbodyHtml;
+            window.currentAwbByHub = awbListByHub; 
+        }
+
+        copyAwbBtn.addEventListener('click', () => {
+            if (!window.currentAwbByHub) return;
+            let textToCopy = '';
+            let hubs = Object.keys(window.currentAwbByHub).sort();
+            
+            if (hubs.length === 0) {
+                showToast("Kosong", "Tidak ada data AWB untuk disalin.", "error");
+                return;
+            }
+
+            hubs.forEach(hub => {
+                let awbs = Array.from(window.currentAwbByHub[hub]);
+                if (awbs.length > 0) {
+                    textToCopy += `=== HUB: ${hub || '(Blank)'} ===\n`;
+                    textToCopy += awbs.join('\n') + '\n\n';
+                }
+            });
+
+            if (textToCopy) {
+                const el = document.createElement('textarea');
+                el.value = textToCopy.trim();
+                document.body.appendChild(el);
+                el.select();
+                document.execCommand('copy');
+                document.body.removeChild(el);
+                showToast("Tersalin", `Berhasil menyalin AWB dari ${hubs.length} HUB!`);
+            }
+        });
+
+        exportBtn.addEventListener('click', () => {
+            if(dataTable.classList.contains('hidden') || !window.currentExportData) return;
+
+            let csvContent = "data:text/csv;charset=utf-8,";
+            csvContent += window.currentExportHeaders.map(h => `"${h}"`).join(',') + "\r\n";
+            window.currentExportData.forEach(row => {
+                let cols = row.map(val => `"${val}"`);
+                csvContent += cols.join(',') + "\r\n";
+            });
+
+            let encodedUri = encodeURI(csvContent);
+            let link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            let dateStr = dateFilter.value === 'all' ? 'AllDates' : dateFilter.value;
+            link.setAttribute("download", `Report_Potential_Breach_${dateStr}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        });
+    </script>
+</body>
+</html>
