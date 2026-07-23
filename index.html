@@ -4,180 +4,193 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard Potential Breach</title>
-    <!-- Tailwind CSS -->
+    
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- PapaParse for CSV Parsing -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Inter', 'sans-serif'] },
+                    colors: {
+                        brand: {
+                            50: '#f5f3ff', 100: '#ede9fe', 200: '#ddd6fe', 300: '#c4b5fd',
+                            400: '#a78bfa', 500: '#8b5cf6', 600: '#7c3aed', 700: '#6d28d9',
+                            800: '#5b21b6', 900: '#4c1d95', 950: '#2e1065',
+                        }
+                    },
+                    boxShadow: {
+                        'soft': '0 4px 20px -2px rgba(0, 0, 0, 0.05)',
+                        'float': '0 10px 30px -5px rgba(0, 0, 0, 0.08)',
+                    }
+                }
+            }
+        }
+    </script>
+    
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
-    <!-- Font Awesome for Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <!-- Flatpickr untuk Rentang Tanggal -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
     
     <style>
-        body { font-family: 'Inter', sans-serif; }
+        body { font-family: 'Inter', sans-serif; -webkit-font-smoothing: antialiased; }
         
-        /* Custom Scrollbar for a cleaner look */
-        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        /* Modern Minimalist Scrollbar */
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
         ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 10px; }
-        ::-webkit-scrollbar-thumb:hover { background: #9ca3af; }
+        ::-webkit-scrollbar-thumb { background: #d4d4d8; border-radius: 20px; border: 2px solid #fafafa; }
+        ::-webkit-scrollbar-thumb:hover { background: #a1a1aa; }
 
-        /* Dropzone Active State */
-        .drag-active { border-color: #6366f1 !important; background-color: #eef2ff !important; }
-        
-        /* Spinner Animation */
         .spinner { animation: spin 1s linear infinite; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
-        /* Toggle Switch Custom CSS */
-        .toggle-checkbox:checked { right: 0; border-color: #6366f1; }
-        .toggle-checkbox:checked + .toggle-label { background-color: #6366f1; }
+        /* Elegant Toggle Switch */
+        .toggle-checkbox:checked { right: 0; border-color: #7c3aed; }
+        .toggle-checkbox:checked + .toggle-label { background-color: #7c3aed; }
         .toggle-checkbox:checked + .toggle-label:after { transform: translateX(100%); border-color: white; }
+        
+        /* Table Sticky Fixes with Glassmorphism */
+        .sticky-col { position: sticky; left: 0; z-index: 10; background-color: inherit; }
+        .sticky-header { position: sticky; top: 0; z-index: 20; backdrop-filter: blur(8px); }
+        .sticky-corner { position: sticky; top: 0; left: 0; z-index: 30; backdrop-filter: blur(8px); }
+        
+        /* Smooth transitions for table rows */
+        tbody tr { transition: all 0.2s ease; }
     </style>
 </head>
-<body class="bg-gray-50 text-gray-800 min-h-screen flex flex-col antialiased">
+<body class="bg-zinc-50 text-zinc-900 min-h-screen flex flex-col selection:bg-brand-200 selection:text-brand-900">
 
-    <!-- Top Navbar -->
-    <nav class="bg-white border-b border-gray-200 sticky top-0 z-40 shadow-sm">
+    <nav class="bg-white/80 backdrop-blur-xl border-b border-zinc-200/80 sticky top-0 z-40">
         <div class="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex justify-between items-center h-16">
+            <div class="flex justify-between items-center h-16 sm:h-20">
                 <!-- Logo & Title -->
-                <div class="flex items-center gap-3">
-                    <div class="bg-indigo-600 p-2 rounded-lg text-white shadow-sm flex items-center justify-center">
+                <div class="flex items-center gap-4 group cursor-pointer">
+                    <div class="bg-brand-600/10 p-2.5 rounded-xl text-brand-600 flex items-center justify-center transition-all group-hover:bg-brand-600 group-hover:text-white">
                         <i class="fa-solid fa-shield-halved text-lg"></i>
                     </div>
                     <div>
-                        <h1 class="text-xl font-bold text-gray-900 leading-tight">Potential Breach</h1>
-                        <p class="text-xs text-gray-500 font-medium uppercase tracking-wide">Monitoring Dashboard</p>
+                        <h1 class="text-xl sm:text-2xl font-extrabold text-zinc-900 tracking-tight leading-none mb-1">Breach<span class="text-brand-600">Monitor</span></h1>
+                        <p class="text-[10px] sm:text-xs text-zinc-500 font-semibold uppercase tracking-widest">Dashboard Analitik FOP</p>
                     </div>
                 </div>
+                
                 <!-- Actions -->
-                <div class="flex items-center gap-3">
-                    <button id="uploadCsvBtn" class="bg-indigo-50 hover:bg-indigo-100 text-indigo-600 border border-indigo-200 px-4 py-2 rounded-lg text-sm font-semibold transition-all shadow-sm flex items-center gap-2" title="Upload File CSV">
-                        <i class="fa-solid fa-cloud-arrow-up"></i>
-                        <span class="hidden sm:inline">Upload Data</span>
-                    </button>
-                    <input type="file" id="fileInput" class="hidden" multiple accept=".csv">
-
-                    <button id="openFopModalBtn" class="group bg-white border border-gray-300 hover:border-indigo-500 hover:text-indigo-600 text-gray-700 px-4 py-2 rounded-lg text-sm font-semibold transition-all shadow-sm flex items-center gap-2">
-                        <i class="fa-solid fa-layer-group text-gray-400 group-hover:text-indigo-500 transition-colors"></i> 
-                        Grouping FOP
+                <div class="flex items-center gap-2 sm:gap-3">
+                    <button id="openFopModalBtn" class="text-zinc-600 hover:text-brand-600 bg-transparent hover:bg-brand-50 px-3 sm:px-4 py-2.5 rounded-xl text-sm font-semibold transition-all flex items-center gap-2">
+                        <i class="fa-solid fa-layer-group text-lg sm:text-base"></i> 
+                        <span class="hidden md:inline">Kategori FOP</span>
                     </button>
                     
-                    <button id="openDeleteModalBtn" class="group bg-white border border-red-200 hover:border-red-500 hover:bg-red-50 hover:text-red-600 text-red-500 px-4 py-2 rounded-lg text-sm font-semibold transition-all shadow-sm flex items-center gap-2">
-                        <i class="fa-solid fa-trash-can text-red-400 group-hover:text-red-500 transition-colors"></i> 
-                        Hapus Data
+                    <button id="openDeleteModalBtn" class="text-zinc-600 hover:text-red-600 bg-transparent hover:bg-red-50 px-3 sm:px-4 py-2.5 rounded-xl text-sm font-semibold transition-all flex items-center gap-2">
+                        <i class="fa-solid fa-trash-can text-lg sm:text-base"></i> 
+                        <span class="hidden md:inline">Hapus Data</span>
                     </button>
+
+                    <div class="w-px h-6 bg-zinc-200 hidden sm:block mx-1"></div>
+
+                    <button id="uploadCsvBtn" class="bg-zinc-900 hover:bg-brand-600 text-white shadow-soft hover:shadow-float px-4 sm:px-5 py-2.5 rounded-xl text-sm font-semibold transition-all duration-300 flex items-center gap-2 transform hover:-translate-y-0.5">
+                        <i class="fa-solid fa-cloud-arrow-up"></i>
+                        <span class="hidden sm:inline">Upload CSV</span>
+                    </button>
+                    <input type="file" id="fileInput" class="hidden" multiple accept=".csv">
                 </div>
             </div>
         </div>
     </nav>
 
-    <!-- Main Content -->
-    <main class="flex-1 max-w-[1600px] w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 flex flex-col gap-6">
+    <main class="flex-1 max-w-[1600px] w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 flex flex-col gap-6 sm:gap-8">
         
-        <!-- Top Widgets Section -->
-        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 shrink-0">
+        <!-- Control Center (Filter & Metrics Combined) -->
+        <div class="bg-white rounded-3xl shadow-soft border border-zinc-200/60 p-5 sm:p-6 lg:p-8 flex flex-col xl:flex-row gap-8 xl:gap-12 shrink-0">
             
-            <!-- Widget 1: Filters (col-span-7) -->
-            <div class="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 lg:col-span-7 flex flex-col">
-                <h2 class="text-sm font-bold text-gray-800 uppercase tracking-wide flex items-center gap-2 mb-5">
-                    <i class="fa-solid fa-sliders text-indigo-500"></i> Filter Data
-                </h2>
-                
-                <div class="flex flex-col gap-5 flex-1">
-                    <!-- Date Filter -->
-                    <div>
-                        <label class="block text-xs font-semibold text-gray-500 mb-1.5 uppercase tracking-wide">Expect Delivery Time</label>
-                        <div class="relative max-w-sm">
-                            <input type="text" id="dateFilter" disabled placeholder="Pilih Rentang Tanggal..." class="w-full appearance-none border border-gray-300 rounded-lg pl-4 pr-10 py-2.5 bg-white text-gray-700 text-sm font-medium focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none disabled:bg-gray-50 disabled:text-gray-400 transition-shadow cursor-pointer">
-                            <i class="fa-solid fa-calendar-day absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"></i>
-                        </div>
+            <!-- Left: Filter Controls -->
+            <div class="flex-1 flex flex-col lg:flex-row gap-6 lg:gap-8">
+                <!-- Date Range -->
+                <div class="w-full lg:w-1/3 min-w-[250px]">
+                    <div class="flex items-center gap-2 mb-3">
+                        <div class="w-6 h-6 rounded-full bg-brand-50 flex items-center justify-center text-brand-600"><i class="fa-regular fa-calendar text-xs"></i></div>
+                        <label class="block text-xs font-bold text-zinc-500 uppercase tracking-widest">Periode Waktu</label>
                     </div>
+                    <div class="relative group">
+                        <input type="text" id="dateFilter" disabled placeholder="Memuat kalender..." class="w-full border-2 border-zinc-200 hover:border-brand-300 rounded-2xl pl-4 pr-10 py-3 bg-zinc-50/50 text-zinc-800 text-sm font-semibold focus:ring-0 focus:border-brand-500 outline-none disabled:opacity-50 transition-all cursor-pointer">
+                        <i class="fa-solid fa-chevron-down absolute right-4 top-1/2 -translate-y-1/2 text-zinc-400 group-hover:text-brand-500 transition-colors pointer-events-none text-xs"></i>
+                    </div>
+                </div>
 
-                    <!-- Hub Filter (Buttons) -->
-                    <div>
-                        <div class="flex justify-between items-center mb-2">
-                            <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide">Pilih HUB</label>
-                            <button id="selectAllHubsBtn" class="text-xs text-indigo-600 hover:text-indigo-800 font-bold transition-colors disabled:opacity-50" disabled>Deselect Semua</button>
+                <!-- Hub Filter -->
+                <div class="flex-1 flex flex-col">
+                    <div class="flex justify-between items-center mb-3">
+                        <div class="flex items-center gap-2">
+                            <div class="w-6 h-6 rounded-full bg-blue-50 flex items-center justify-center text-blue-600"><i class="fa-solid fa-map-location-dot text-xs"></i></div>
+                            <label class="block text-xs font-bold text-zinc-500 uppercase tracking-widest">Pilih HUB</label>
                         </div>
-                        <div id="hubButtonsContainer" class="flex flex-wrap gap-2">
-                            <div class="text-sm text-gray-400 italic py-1">Upload data CSV untuk melihat pilihan HUB</div>
-                        </div>
+                        <button id="selectAllHubsBtn" class="text-xs text-brand-600 hover:text-brand-800 font-bold transition-colors disabled:opacity-50 bg-brand-50 hover:bg-brand-100 px-3 py-1 rounded-full" disabled>Deselect Semua</button>
+                    </div>
+                    <div id="hubButtonsContainer" class="flex flex-wrap gap-2 max-h-[120px] overflow-y-auto pr-2 custom-scrollbar">
+                        <div class="text-sm text-zinc-400 italic py-2">Upload data terlebih dahulu...</div>
                     </div>
                 </div>
             </div>
 
-            <!-- Widget 2: Metrics & Toggles (col-span-5) -->
-            <div class="lg:col-span-5 flex flex-col gap-4">
-                <!-- Toggle Card -->
-                <div class="bg-white rounded-2xl shadow-sm border border-gray-200 p-5 flex items-center justify-between">
-                    <div>
-                        <p class="text-sm font-bold text-gray-800">Dest Staging</p>
-                        <p class="text-xs text-gray-500 mt-0.5">Tampilkan rincian staging</p>
-                    </div>
-                    <!-- Modern Toggle -->
-                    <div class="relative inline-block w-12 h-6 align-middle select-none transition duration-200 ease-in">
-                        <input type="checkbox" name="toggle" id="showDestStagingToggle" checked disabled class="toggle-checkbox absolute block w-6 h-6 rounded-full bg-white border-4 border-gray-300 appearance-none cursor-pointer transition-all duration-300 z-10 top-0 left-0 disabled:opacity-50"/>
-                        <label for="showDestStagingToggle" class="toggle-label block overflow-hidden h-6 rounded-full bg-gray-300 cursor-pointer transition-colors duration-300"></label>
-                    </div>
-                </div>
-                
-                <!-- Metrics -->
-                <div class="grid grid-cols-2 gap-4 flex-1">
-                    <div class="bg-white rounded-2xl shadow-sm border border-gray-200 p-4 flex flex-col justify-center relative overflow-hidden">
-                        <i class="fa-solid fa-list-ol absolute -right-3 -bottom-3 text-5xl text-gray-50 opacity-50"></i>
-                        <p class="text-[11px] text-gray-500 font-bold uppercase tracking-wider mb-1 z-10">Total Baris</p>
-                        <p id="stat-total-rows" class="text-2xl font-black text-gray-900 z-10">0</p>
-                    </div>
-                    <div class="bg-gradient-to-br from-indigo-50 to-white rounded-2xl shadow-sm border border-indigo-100 p-4 flex flex-col justify-center relative overflow-hidden">
-                        <i class="fa-solid fa-box absolute -right-3 -bottom-3 text-5xl text-indigo-100 opacity-50"></i>
-                        <p class="text-[11px] text-indigo-600 font-bold uppercase tracking-wider mb-1 z-10">Total AWB</p>
-                        <p id="stat-total-awb" class="text-2xl font-black text-indigo-900 z-10">0</p>
-                    </div>
-                </div>
+            <!-- Right: Divider & Metrics -->
+            <div class="hidden xl:block w-px bg-zinc-100"></div>
+            
+            <div id="stats-container" class="xl:w-[400px] grid grid-cols-2 gap-3 content-start xl:content-center max-h-[160px] overflow-y-auto custom-scrollbar pr-1">
+                <!-- Data statistik FOP akan dimuat di sini oleh JS -->
+                <div class="col-span-2 text-sm text-zinc-400 italic py-2 text-center">Menunggu data...</div>
             </div>
         </div>
 
         <!-- Table Section -->
-        <div class="bg-white rounded-2xl shadow-sm border border-gray-200 flex-1 flex flex-col overflow-hidden min-h-[65vh]">
+        <div class="bg-white rounded-3xl shadow-soft border border-zinc-200/60 flex-1 flex flex-col overflow-hidden min-h-[60vh] relative">
             
-            <!-- Table Header Actions -->
-            <div class="px-6 py-4 border-b border-gray-200 flex flex-col sm:flex-row justify-between items-center gap-4 bg-white z-20">
-                <h2 class="text-base font-bold text-gray-800 flex items-center gap-2">
-                    <i class="fa-solid fa-table-cells text-indigo-500"></i> Data Pivot FOP
-                </h2>
+            <!-- Table Header Toolbar -->
+            <div class="px-6 py-5 border-b border-zinc-100 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white/95 backdrop-blur-md z-20">
+                <div class="flex items-center gap-4">
+                    <h2 class="text-base font-bold text-zinc-800 flex items-center gap-2">
+                        <i class="fa-solid fa-table-cells-large text-brand-500"></i> Pivot Data FOP
+                    </h2>
+                    
+                    <!-- Beautiful Toggle inside table header -->
+                    <div class="h-6 w-px bg-zinc-200 hidden sm:block"></div>
+                    <div class="flex items-center gap-3">
+                        <div class="relative inline-block w-10 h-5 align-middle select-none">
+                            <input type="checkbox" id="showDestStagingToggle" checked disabled class="toggle-checkbox absolute block w-5 h-5 rounded-full bg-white border-2 border-zinc-300 appearance-none cursor-pointer transition-all duration-300 z-10 top-0 left-0 disabled:opacity-50"/>
+                            <label for="showDestStagingToggle" class="toggle-label block overflow-hidden h-5 rounded-full bg-zinc-200 cursor-pointer transition-colors duration-300"></label>
+                        </div>
+                        <span class="text-xs font-bold text-zinc-500 tracking-wide uppercase">Tampilkan Staging</span>
+                    </div>
+                </div>
+
                 <div class="flex items-center gap-2 w-full sm:w-auto">
-                    <button id="copyAwbBtn" disabled class="flex-1 sm:flex-none bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 px-4 py-2 rounded-lg text-sm font-semibold transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
-                        <i class="fa-solid fa-copy"></i> Salin AWB
+                    <button id="copyAwbBtn" disabled class="flex-1 sm:flex-none bg-zinc-50 hover:bg-zinc-100 text-zinc-700 border border-zinc-200 px-4 py-2 rounded-xl text-sm font-semibold transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
+                        <i class="fa-regular fa-copy text-zinc-400"></i> Salin AWB
                     </button>
-                    <button id="exportBtn" disabled class="flex-1 sm:flex-none bg-gray-900 hover:bg-gray-800 text-white px-4 py-2 rounded-lg text-sm font-semibold transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm">
-                        <i class="fa-solid fa-file-export"></i> Export CSV
+                    <button id="exportBtn" disabled class="flex-1 sm:flex-none bg-white hover:bg-brand-50 text-brand-700 border border-brand-200 px-4 py-2 rounded-xl text-sm font-semibold transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
+                        <i class="fa-solid fa-download"></i> Export CSV
                     </button>
                 </div>
             </div>
             
-            <!-- Table Wrapper (Scrollable) -->
-            <div class="flex-1 overflow-auto bg-gray-50/30 relative" id="tableWrapper">
+            <!-- Table Wrapper -->
+            <div class="flex-1 overflow-auto relative bg-zinc-50/30" id="tableWrapper" style="-webkit-overflow-scrolling: touch;">
                 
-                <!-- Empty State -->
-                <div id="empty-state" class="absolute inset-0 flex flex-col items-center justify-center text-gray-400 p-8 z-10">
-                    <div class="bg-gray-50 p-6 rounded-full border border-gray-100 mb-4">
-                        <i class="fa-solid fa-folder-open text-5xl text-gray-300"></i>
+                <!-- Empty State Clean -->
+                <div id="empty-state" class="absolute inset-0 flex flex-col items-center justify-center text-zinc-400 p-8 z-10 bg-white">
+                    <div class="w-24 h-24 bg-zinc-50 rounded-full flex items-center justify-center mb-5 border-4 border-white shadow-soft">
+                        <i class="fa-solid fa-inbox text-4xl text-zinc-300"></i>
                     </div>
-                    <p class="text-lg font-bold text-gray-600">Belum Ada Data</p>
-                    <p class="text-sm mt-1 max-w-sm text-center">Tarik dan lepas file CSV laporan Anda pada area sumber data di atas untuk mulai menganalisis.</p>
+                    <p class="text-lg font-bold text-zinc-700">Ruang Kerja Kosong</p>
+                    <p class="text-sm mt-2 max-w-sm text-center text-zinc-500 leading-relaxed">Silakan unggah file CSV Anda menggunakan tombol di pojok kanan atas untuk memvisualisasikan data.</p>
                 </div>
 
                 <!-- Main Data Table -->
                 <table id="dataTable" class="w-full text-left border-collapse hidden">
-                    <thead id="tableHead" class="bg-gray-50">
+                    <thead id="tableHead" class="bg-zinc-50/90 text-zinc-600 border-b border-zinc-200">
                         <!-- Dynamic Header goes here -->
                     </thead>
-                    <tbody id="tableBody" class="divide-y divide-gray-100 bg-white">
+                    <tbody id="tableBody" class="divide-y divide-zinc-100 bg-white">
                         <!-- Dynamic Rows go here -->
                     </tbody>
                 </table>
@@ -186,75 +199,72 @@
     </main>
 
     <!-- Modal Pengaturan FOP -->
-    <div id="fopModal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4">
-        <!-- Backdrop Blur -->
-        <div class="absolute inset-0 bg-gray-900/40 backdrop-blur-sm transition-opacity" id="fopModalBackdrop"></div>
-        
-        <!-- Modal Content -->
-        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-3xl overflow-hidden flex flex-col max-h-[90vh] relative z-10 transform scale-95 opacity-0 transition-all duration-300" id="fopModalContent">
-            <!-- Header -->
-            <div class="px-6 py-5 border-b border-gray-100 flex justify-between items-center bg-white">
-                <div>
-                    <h3 class="font-bold text-lg text-gray-900">Pengaturan Grouping FOP</h3>
-                    <p class="text-xs text-gray-500 mt-0.5">Kelompokkan beberapa metode pembayaran menjadi satu kategori.</p>
+    <div id="fopModal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6">
+        <div class="absolute inset-0 bg-zinc-900/40 backdrop-blur-sm transition-opacity" id="fopModalBackdrop"></div>
+        <div class="bg-white rounded-[2rem] shadow-float w-full max-w-4xl overflow-hidden flex flex-col max-h-[90vh] relative z-10 transform scale-95 opacity-0 transition-all duration-300" id="fopModalContent">
+            
+            <div class="px-8 py-6 border-b border-zinc-100 flex justify-between items-center bg-white">
+                <div class="flex items-center gap-4">
+                    <div class="w-10 h-10 bg-brand-50 rounded-full flex items-center justify-center text-brand-600">
+                        <i class="fa-solid fa-layer-group"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-extrabold text-lg text-zinc-900 tracking-tight">Kategori Grup FOP</h3>
+                        <p class="text-xs font-medium text-zinc-500 mt-0.5">Atur pengelompokan metode pembayaran secara kustom.</p>
+                    </div>
                 </div>
-                <button id="closeFopModalBtn" class="text-gray-400 hover:text-gray-600 bg-gray-50 hover:bg-gray-100 w-8 h-8 rounded-full flex items-center justify-center transition-colors">
+                <button id="closeFopModalBtn" class="text-zinc-400 hover:text-zinc-700 hover:bg-zinc-100 w-10 h-10 rounded-full flex items-center justify-center transition-all">
                     <i class="fa-solid fa-xmark text-lg"></i>
                 </button>
             </div>
             
-            <!-- Body -->
-            <div class="p-6 overflow-y-auto flex-1 bg-gray-50/50">
-                
+            <div class="p-8 overflow-y-auto flex-1 bg-zinc-50/50">
                 <!-- Form Input -->
-                <div class="bg-white p-5 rounded-xl border border-gray-200 shadow-sm mb-6">
-                    <div class="flex flex-col sm:flex-row gap-4 items-end">
+                <div class="bg-white p-5 rounded-2xl border border-zinc-200 shadow-sm mb-8">
+                    <div class="flex flex-col md:flex-row gap-5 items-end">
                         <div class="flex-1 w-full">
-                            <label class="block text-xs font-bold text-gray-700 mb-1.5 uppercase tracking-wide">Nama Kategori Utama</label>
-                            <input type="text" id="fopCategoryInput" class="w-full border border-gray-300 rounded-lg px-4 py-2.5 bg-white text-gray-800 text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-shadow placeholder:text-gray-300" placeholder="Contoh: Tunai">
+                            <label class="block text-[11px] font-bold text-zinc-500 mb-2 uppercase tracking-widest">Nama Kategori</label>
+                            <input type="text" id="fopCategoryInput" class="w-full border-2 border-zinc-200 rounded-xl px-4 py-2.5 text-sm font-semibold focus:border-brand-500 outline-none transition-colors" placeholder="Misal: Cash On Delivery">
                         </div>
                         <div class="flex-[2] w-full">
-                            <label class="block text-xs font-bold text-gray-700 mb-1.5 uppercase tracking-wide">Nilai FOP (Gunakan koma)</label>
-                            <input type="text" id="fopValuesInput" class="w-full border border-gray-300 rounded-lg px-4 py-2.5 bg-white text-gray-800 text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-shadow placeholder:text-gray-300" placeholder="Contoh: COD, CASH, CASH_ON_PICKUP">
+                            <label class="block text-[11px] font-bold text-zinc-500 mb-2 uppercase tracking-widest">Nilai Raw (Gunakan koma)</label>
+                            <input type="text" id="fopValuesInput" class="w-full border-2 border-zinc-200 rounded-xl px-4 py-2.5 text-sm font-semibold focus:border-brand-500 outline-none transition-colors" placeholder="COD, CASH, COP">
                         </div>
-                        <div class="flex gap-2 w-full sm:w-auto">
-                            <button id="addFopGroupBtn" class="bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2.5 rounded-lg text-sm font-semibold transition-all shadow-sm w-full sm:w-auto flex items-center justify-center gap-2 active:scale-95">
-                                <i class="fa-solid fa-plus"></i> <span>Tambah</span>
+                        <div class="flex gap-2 w-full md:w-auto">
+                            <button id="addFopGroupBtn" class="bg-brand-600 hover:bg-brand-700 text-white px-6 py-3 rounded-xl text-sm font-bold transition-all w-full md:w-auto flex items-center justify-center gap-2 shadow-sm">
+                                <i class="fa-solid fa-plus"></i> Tambah
                             </button>
-                            <button id="cancelEditFopBtn" class="hidden bg-white hover:bg-gray-50 border border-gray-300 text-gray-700 px-5 py-2.5 rounded-lg text-sm font-semibold transition-colors w-full sm:w-auto">
+                            <button id="cancelEditFopBtn" class="hidden bg-zinc-100 hover:bg-zinc-200 text-zinc-700 px-6 py-3 rounded-xl text-sm font-bold transition-all w-full md:w-auto">
                                 Batal
                             </button>
                         </div>
                     </div>
                 </div>
                 
-                <!-- Rules Table -->
-                <h4 class="text-sm font-bold text-gray-800 mb-3 uppercase tracking-wide">Daftar Aturan Grouping</h4>
-                <div class="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm">
-                    <table class="w-full text-left text-sm text-gray-700">
-                        <thead class="bg-gray-50 text-gray-500 border-b border-gray-200 uppercase text-[11px] font-bold tracking-wider">
+                <!-- Table Rules -->
+                <div class="bg-white border border-zinc-200 rounded-2xl overflow-hidden shadow-sm">
+                    <table class="w-full text-left text-sm text-zinc-700">
+                        <thead class="bg-zinc-50/80 border-b border-zinc-200 uppercase text-[10px] font-extrabold tracking-wider text-zinc-500">
                             <tr>
-                                <th class="px-5 py-3 w-1/3">Kategori</th>
-                                <th class="px-5 py-3">Termasuk Nilai FOP</th>
-                                <th class="px-5 py-3 text-center w-20">Aksi</th>
+                                <th class="px-6 py-4 w-1/3">Kategori Grup</th>
+                                <th class="px-6 py-4">Daftar Nilai / Keywords</th>
+                                <th class="px-6 py-4 text-center w-24">Aksi</th>
                             </tr>
                         </thead>
-                        <tbody id="fopGroupTableBody" class="divide-y divide-gray-100">
+                        <tbody id="fopGroupTableBody" class="divide-y divide-zinc-100">
                             <!-- Dynamic rows -->
                         </tbody>
                     </table>
-                    <div id="empty-fop-state" class="text-center py-10 flex flex-col items-center text-gray-400">
-                        <i class="fa-solid fa-clipboard-list text-3xl mb-3 text-gray-300"></i>
-                        <p class="font-medium text-sm">Belum ada aturan grouping.</p>
-                        <p class="text-xs mt-1">Gunakan form di atas untuk membuat aturan baru.</p>
+                    <div id="empty-fop-state" class="text-center py-12 flex flex-col items-center text-zinc-400">
+                        <i class="fa-solid fa-shapes text-3xl mb-3 text-zinc-300"></i>
+                        <p class="font-bold text-sm">Belum ada aturan grup FOP.</p>
                     </div>
                 </div>
             </div>
             
-            <!-- Footer -->
-            <div class="px-6 py-4 border-t border-gray-100 bg-gray-50 flex justify-end">
-                <button id="saveFopModalBtn" class="bg-gray-900 hover:bg-black text-white px-6 py-2.5 rounded-lg text-sm font-semibold transition-colors shadow-sm">
-                    Tutup & Terapkan
+            <div class="px-8 py-5 border-t border-zinc-100 bg-white flex justify-end">
+                <button id="saveFopModalBtn" class="bg-zinc-900 hover:bg-zinc-800 text-white px-8 py-3 rounded-xl text-sm font-bold transition-all shadow-sm">
+                    Terapkan Perubahan
                 </button>
             </div>
         </div>
@@ -262,78 +272,69 @@
 
     <!-- Modal Hapus Data -->
     <div id="deleteModal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4">
-        <!-- Backdrop Blur -->
-        <div class="absolute inset-0 bg-gray-900/40 backdrop-blur-sm transition-opacity" id="deleteModalBackdrop"></div>
-        
-        <!-- Modal Content -->
-        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden flex flex-col relative z-10 transform scale-95 opacity-0 transition-all duration-300" id="deleteModalContent">
-            <!-- Header -->
-            <div class="px-6 py-5 border-b border-gray-100 flex justify-between items-center bg-white">
-                <div>
-                    <h3 class="font-bold text-lg text-red-600 flex items-center gap-2"><i class="fa-solid fa-triangle-exclamation"></i> Hapus Data</h3>
-                    <p class="text-xs text-gray-500 mt-0.5">Hapus data permanen dari database.</p>
-                </div>
-                <button id="closeDeleteModalBtn" class="text-gray-400 hover:text-gray-600 bg-gray-50 hover:bg-gray-100 w-8 h-8 rounded-full flex items-center justify-center transition-colors">
-                    <i class="fa-solid fa-xmark text-lg"></i>
+        <div class="absolute inset-0 bg-zinc-900/40 backdrop-blur-sm transition-opacity" id="deleteModalBackdrop"></div>
+        <div class="bg-white rounded-3xl shadow-float w-full max-w-md overflow-hidden flex flex-col relative z-10 transform scale-95 opacity-0 transition-all duration-300" id="deleteModalContent">
+            <div class="px-6 py-5 border-b border-zinc-100 flex justify-between items-center bg-white">
+                <h3 class="font-extrabold text-lg text-red-600 tracking-tight flex items-center gap-2">
+                    <div class="w-8 h-8 rounded-full bg-red-50 flex items-center justify-center"><i class="fa-solid fa-triangle-exclamation text-sm"></i></div>
+                    Hapus Data
+                </h3>
+                <button id="closeDeleteModalBtn" class="text-zinc-400 hover:text-zinc-700 hover:bg-zinc-100 w-8 h-8 rounded-full flex items-center justify-center transition-colors">
+                    <i class="fa-solid fa-xmark"></i>
                 </button>
             </div>
-            
-            <!-- Body -->
-            <div class="p-6 bg-gray-50/50 flex-1">
-                <div class="flex flex-col gap-4">
+            <div class="p-6 bg-white flex-1">
+                <div class="flex flex-col gap-5">
                     <div>
-                        <label class="block text-xs font-bold text-gray-700 mb-1.5 uppercase tracking-wide">Kriteria Hapus</label>
-                        <select id="deleteCriteriaSelect" class="w-full border border-gray-300 rounded-lg px-4 py-2.5 bg-white text-gray-800 text-sm focus:ring-2 focus:ring-red-500 outline-none transition-shadow">
-                            <option value="bulan">Berdasarkan Bulan (Expect Delivery Time)</option>
-                            <option value="destinasi">Berdasarkan Destinasi (HUB)</option>
+                        <label class="block text-[11px] font-bold text-zinc-500 mb-2 uppercase tracking-widest">Berdasarkan</label>
+                        <select id="deleteCriteriaSelect" class="w-full border-2 border-zinc-200 rounded-xl px-4 py-3 text-sm font-semibold focus:border-red-400 outline-none bg-white cursor-pointer appearance-none">
+                            <option value="bulan">Bulan (EDD)</option>
+                            <option value="destinasi">Destinasi (HUB)</option>
                         </select>
                     </div>
                     <div>
-                        <label class="block text-xs font-bold text-gray-700 mb-1.5 uppercase tracking-wide">Pilih Nilai</label>
-                        <select id="deleteValueSelect" class="w-full border border-gray-300 rounded-lg px-4 py-2.5 bg-white text-gray-800 text-sm focus:ring-2 focus:ring-red-500 outline-none transition-shadow">
-                            <!-- Options populated dynamically -->
+                        <label class="block text-[11px] font-bold text-zinc-500 mb-2 uppercase tracking-widest">Pilih Nilai</label>
+                        <select id="deleteValueSelect" class="w-full border-2 border-zinc-200 rounded-xl px-4 py-3 text-sm font-semibold focus:border-red-400 outline-none bg-white cursor-pointer appearance-none">
+                            <!-- Options -->
                         </select>
                     </div>
                 </div>
-                
-                <div class="mt-5 p-3 bg-red-50 border border-red-100 rounded-lg flex gap-3 items-start">
+                <div class="mt-6 p-4 bg-red-50 border border-red-100 rounded-2xl flex gap-3 items-start">
                     <i class="fa-solid fa-circle-info text-red-500 mt-0.5"></i>
-                    <p class="text-xs text-red-700 leading-relaxed">
-                        <strong>Perhatian:</strong> Tindakan ini akan menghapus data tersebut secara permanen dari Supabase.
+                    <p class="text-xs text-red-700 leading-relaxed font-medium">
+                        Tindakan ini tidak dapat dibatalkan. Data yang Anda pilih akan dihapus secara permanen dari Cloud Database.
                     </p>
                 </div>
             </div>
-            
-            <!-- Footer -->
-            <div class="px-6 py-4 border-t border-gray-100 bg-gray-50 flex justify-end gap-3">
-                <button id="cancelDeleteBtn" class="bg-white hover:bg-gray-50 border border-gray-300 text-gray-700 px-5 py-2.5 rounded-lg text-sm font-semibold transition-colors">
-                    Batal
-                </button>
-                <button id="confirmDeleteBtn" class="bg-red-600 hover:bg-red-700 text-white px-6 py-2.5 rounded-lg text-sm font-semibold transition-all shadow-sm flex items-center justify-center gap-2" disabled>
+            <div class="px-6 py-5 border-t border-zinc-100 bg-zinc-50 flex justify-end gap-3">
+                <button id="cancelDeleteBtn" class="bg-white hover:bg-zinc-100 border border-zinc-200 text-zinc-700 px-5 py-2.5 rounded-xl text-sm font-bold transition-colors">Batal</button>
+                <button id="confirmDeleteBtn" class="bg-red-600 hover:bg-red-700 text-white px-5 py-2.5 rounded-xl text-sm font-bold transition-all shadow-sm flex items-center gap-2" disabled>
                     <i class="fa-solid fa-trash-can"></i> Hapus Permanen
                 </button>
             </div>
         </div>
     </div>
 
-    <!-- Modern Toast Notification -->
-    <div id="toast" class="fixed bottom-6 right-6 bg-gray-900/95 backdrop-blur-md text-white pl-4 pr-5 py-3 rounded-xl shadow-2xl transform transition-all duration-300 translate-y-24 opacity-0 pointer-events-none z-[70] flex items-center gap-3 border border-gray-700">
-        <div id="toastIconWrapper" class="bg-emerald-500/20 p-1.5 rounded-full flex items-center justify-center">
-            <i id="toastIcon" class="fa-solid fa-check text-emerald-400 text-sm"></i>
+    <!-- Notifications -->
+    <div id="toast" class="fixed bottom-6 right-6 bg-zinc-900/95 backdrop-blur text-white pl-4 pr-6 py-4 rounded-2xl shadow-float transform transition-all duration-300 translate-y-24 opacity-0 pointer-events-none z-[70] flex items-center gap-4 border border-zinc-700">
+        <div id="toastIconWrapper" class="bg-brand-500/20 text-brand-400 w-8 h-8 rounded-full flex items-center justify-center">
+            <i id="toastIcon" class="fa-solid fa-check text-sm"></i>
         </div>
         <div>
-            <p id="toastTitle" class="text-sm font-bold leading-tight">Sukses</p>
-            <p id="toastMessage" class="text-xs text-gray-300 mt-0.5">Pesan berhasil</p>
+            <p id="toastTitle" class="text-sm font-extrabold tracking-wide">Berhasil</p>
+            <p id="toastMessage" class="text-xs text-zinc-300 mt-0.5 font-medium">Aksi selesai.</p>
         </div>
     </div>
 
-    <!-- Upload Overlay (Loading & File List) -->
-    <div id="upload-overlay" class="hidden fixed inset-0 bg-white/80 backdrop-blur-sm z-[100] flex-col items-center justify-center p-6 text-center">
-        <div class="bg-white p-8 rounded-2xl shadow-2xl border border-gray-100 flex flex-col items-center max-w-md w-full">
-            <i class="fa-solid fa-circle-notch spinner text-4xl text-indigo-600 mb-4"></i>
-            <p class="text-base font-bold text-gray-800">Memproses Data...</p>
-            <p class="text-sm text-gray-500 mt-1">Harap tunggu sebentar</p>
-            <div id="file-list" class="mt-5 flex flex-wrap gap-2 justify-center max-h-[120px] overflow-y-auto w-full"></div>
+    <!-- Loading Overlay -->
+    <div id="upload-overlay" class="hidden fixed inset-0 bg-white/80 backdrop-blur-md z-[100] flex-col items-center justify-center p-6 text-center">
+        <div class="bg-white p-8 rounded-[2rem] shadow-float border border-zinc-100 flex flex-col items-center max-w-sm w-full">
+            <div class="relative w-16 h-16 mb-6">
+                <div class="absolute inset-0 border-4 border-zinc-100 rounded-full"></div>
+                <div class="absolute inset-0 border-4 border-brand-600 rounded-full border-t-transparent spinner"></div>
+            </div>
+            <p class="text-lg font-extrabold text-zinc-900 tracking-tight">Sinkronisasi Sistem</p>
+            <p class="text-sm text-zinc-500 mt-2 font-medium">Mohon tunggu sebentar, data sedang diproses...</p>
         </div>
     </div>
 
@@ -342,620 +343,258 @@
         let globalRawData = [];
         let availableDates = new Set();
         let availableHubs = new Set();
-        let uniqueFopCodes = new Set();
         let fopGroupConfig = JSON.parse(localStorage.getItem('awbFopGroupConfig')) || [];
         let editingFopIndex = -1;
-        let fpDateFilterInstance = null; // Instance untuk Flatpickr
+        let fpDateFilterInstance = null; 
+        let isAllSelected = true;
 
         // Supabase Configuration
         const SUPABASE_BASE_URL = 'https://svmgwupvjybfmatjfafp.supabase.co/rest/v1/';
         const supabaseUrl = SUPABASE_BASE_URL + 'fop_grouping';
         const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN2bWd3dXB2anliZm1hdGpmYWZwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI1ODc1NDUsImV4cCI6MjA4ODE2MzU0NX0.kP7Y0dy5l61Xi2S8ji9buq8W1R9ZNLyHyBHhTh3qFbw';
 
-        // Load data from Supabase on startup
+        // DOM Elements
+        const uploadOverlay = document.getElementById('upload-overlay');
+        const fileInput = document.getElementById('fileInput');
+        const dateFilter = document.getElementById('dateFilter');
+        const hubButtonsContainer = document.getElementById('hubButtonsContainer');
+        const selectAllHubsBtn = document.getElementById('selectAllHubsBtn');
+        const showDestStagingToggle = document.getElementById('showDestStagingToggle');
+        const emptyState = document.getElementById('empty-state');
+        const dataTable = document.getElementById('dataTable');
+        const tableHead = document.getElementById('tableHead');
+        const tableBody = document.getElementById('tableBody');
+
         async function loadFopConfigFromSupabase() {
             try {
                 const response = await fetch(`${supabaseUrl}?id=eq.1`, {
-                    method: 'GET',
-                    headers: {
-                        'apikey': supabaseKey,
-                        'Authorization': `Bearer ${supabaseKey}`,
-                        'Content-Type': 'application/json'
-                    }
+                    headers: { 'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}` }
                 });
                 const data = await response.json();
-                
                 if (data && data.length > 0 && data[0].config) {
                     fopGroupConfig = data[0].config;
-                    // Backup ke localStorage lokal
                     localStorage.setItem('awbFopGroupConfig', JSON.stringify(fopGroupConfig)); 
                 }
             } catch (error) {
-                console.error("Gagal mengambil data dari Supabase, menggunakan data lokal.", error);
+                console.error("Gagal load config, pakai lokal.", error);
             }
         }
         
         async function loadAwbDataFromSupabase() {
             try {
-                uploadOverlay.classList.remove('hidden');
-                uploadOverlay.classList.add('flex');
-                document.querySelector('#upload-overlay p.font-bold').textContent = "Menarik Data dari Database...";
-                document.querySelector('#upload-overlay p.text-sm').textContent = "Sinkronisasi dari Supabase Cloud";
-
+                uploadOverlay.classList.replace('hidden', 'flex');
+                document.querySelector('#upload-overlay p.font-extrabold').textContent = "Menarik Data...";
+                
                 let allFetchedData = [];
-                let offset = 0;
-                const limit = 1000;
-                let hasMore = true;
+                let offset = 0; const limit = 1000; let hasMore = true;
 
                 while (hasMore) {
                     const response = await fetch(`${SUPABASE_BASE_URL}awb_data?select=*&limit=${limit}&offset=${offset}`, {
-                        method: 'GET',
-                        headers: {
-                            'apikey': supabaseKey,
-                            'Authorization': `Bearer ${supabaseKey}`,
-                            'Content-Type': 'application/json'
-                        }
+                        headers: { 'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}` }
                     });
-
                     if (response.ok) {
                         const data = await response.json();
-                        if (data.length > 0) {
-                            allFetchedData = allFetchedData.concat(data);
-                            offset += limit;
-                        }
-                        if (data.length < limit) {
-                            hasMore = false;
-                        }
-                    } else {
-                        console.error("Gagal menarik data AWB");
-                        hasMore = false;
-                    }
+                        if (data.length > 0) { allFetchedData = allFetchedData.concat(data); offset += limit; }
+                        if (data.length < limit) hasMore = false;
+                    } else hasMore = false;
                 }
 
                 if (allFetchedData.length > 0) {
-                    globalRawData = allFetchedData; // Timpa globalRawData murni dari database
-                    processInitialData();
-                    renderTable();
+                    globalRawData = allFetchedData;
+                    processInitialData(); renderTable();
                     
                     dateFilter.disabled = false;
                     showDestStagingToggle.disabled = false;
-                    exportBtn.disabled = false;
-                    copyAwbBtn.disabled = false;
-                    
-                    showToast("Tersinkronisasi", `Berhasil memuat ${allFetchedData.length} data.`, "success");
+                    document.getElementById('exportBtn').disabled = false;
+                    document.getElementById('copyAwbBtn').disabled = false;
+                    showToast("Tersinkronisasi", `Dimuat ${allFetchedData.length} baris data.`);
                 } else {
-                    // Database kosong
-                    globalRawData = [];
-                    renderTable();
+                    globalRawData = []; renderTable();
                 }
             } catch (error) {
-                console.error('Error memuat data:', error);
-                showToast('Gagal', 'Terjadi kesalahan saat memuat data', 'error');
+                showToast('Gagal', 'Terjadi kesalahan jaringan', 'error');
             } finally {
-                uploadOverlay.classList.add('hidden');
-                uploadOverlay.classList.remove('flex');
-                document.querySelector('#upload-overlay p.font-bold').textContent = "Memproses Data...";
-                document.querySelector('#upload-overlay p.text-sm').textContent = "Harap tunggu sebentar";
+                uploadOverlay.classList.replace('flex', 'hidden');
+                document.querySelector('#upload-overlay p.font-extrabold').textContent = "Sinkronisasi Sistem";
             }
         }
 
-        // Panggil fungsi saat web dibuka (Langsung tarik data otomatis)
         document.addEventListener('DOMContentLoaded', () => {
-            loadFopConfigFromSupabase().then(() => {
-                loadAwbDataFromSupabase();
-            });
+            loadFopConfigFromSupabase().then(() => loadAwbDataFromSupabase());
         });
-        
-        async function saveFopConfigToStorage() {
-            // Simpan lokal agar UI langsung merespon
-            localStorage.setItem('awbFopGroupConfig', JSON.stringify(fopGroupConfig));
-            
-            // Simpan ke Cloud (Supabase) dengan mode "Upsert" (Update jika id=1 sudah ada, atau Insert jika belum ada)
-            try {
-                await fetch(supabaseUrl, {
-                    method: 'POST',
-                    headers: {
-                        'apikey': supabaseKey,
-                        'Authorization': `Bearer ${supabaseKey}`,
-                        'Content-Type': 'application/json',
-                        'Prefer': 'resolution=merge-duplicates'
-                    },
-                    body: JSON.stringify({ id: 1, config: fopGroupConfig })
-                });
-            } catch(e) {
-                console.error("Gagal tersinkronisasi dengan Supabase Cloud", e);
-            }
-        }
-
-        // DOM Elements
-        const uploadCsvBtn = document.getElementById('uploadCsvBtn');
-        const fileInput = document.getElementById('fileInput');
-        const uploadOverlay = document.getElementById('upload-overlay');
-        const fileListContainer = document.getElementById('file-list');
-        
-        const dateFilter = document.getElementById('dateFilter');
-        const hubButtonsContainer = document.getElementById('hubButtonsContainer');
-        const selectAllHubsBtn = document.getElementById('selectAllHubsBtn');
-        const showDestStagingToggle = document.getElementById('showDestStagingToggle');
-        
-        const emptyState = document.getElementById('empty-state');
-        const dataTable = document.getElementById('dataTable');
-        const tableHead = document.getElementById('tableHead');
-        const tableBody = document.getElementById('tableBody');
-        const exportBtn = document.getElementById('exportBtn');
-        const copyAwbBtn = document.getElementById('copyAwbBtn');
-        
-        const statTotalRows = document.getElementById('stat-total-rows');
-        const statTotalAwb = document.getElementById('stat-total-awb');
-
-        // Modal Elements
-        const fopModal = document.getElementById('fopModal');
-        const fopModalContent = document.getElementById('fopModalContent');
-        const fopModalBackdrop = document.getElementById('fopModalBackdrop');
-        const openFopModalBtn = document.getElementById('openFopModalBtn');
-        const closeFopModalBtn = document.getElementById('closeFopModalBtn');
-        const saveFopModalBtn = document.getElementById('saveFopModalBtn');
-        
-        const fopCategoryInput = document.getElementById('fopCategoryInput');
-        const fopValuesInput = document.getElementById('fopValuesInput');
-        const addFopGroupBtn = document.getElementById('addFopGroupBtn');
-        const cancelEditFopBtn = document.getElementById('cancelEditFopBtn');
-        const fopGroupTableBody = document.getElementById('fopGroupTableBody');
-        const emptyFopState = document.getElementById('empty-fop-state');
-
-        // Delete Modal Elements
-        const openDeleteModalBtn = document.getElementById('openDeleteModalBtn');
-        const deleteModal = document.getElementById('deleteModal');
-        const deleteModalContent = document.getElementById('deleteModalContent');
-        const deleteModalBackdrop = document.getElementById('deleteModalBackdrop');
-        const closeDeleteModalBtn = document.getElementById('closeDeleteModalBtn');
-        const deleteCriteriaSelect = document.getElementById('deleteCriteriaSelect');
-        const deleteValueSelect = document.getElementById('deleteValueSelect');
-        const cancelDeleteBtn = document.getElementById('cancelDeleteBtn');
-        const confirmDeleteBtn = document.getElementById('confirmDeleteBtn');
-
-        // Missing state variable for HUB chips
-        let isAllSelected = true;
 
         function showToast(title, message, type = 'success') {
             const toast = document.getElementById('toast');
-            const toastTitle = document.getElementById('toastTitle');
-            const toastMessage = document.getElementById('toastMessage');
-            const toastIcon = document.getElementById('toastIcon');
-            const toastIconWrapper = document.getElementById('toastIconWrapper');
+            document.getElementById('toastTitle').textContent = title;
+            document.getElementById('toastMessage').textContent = message;
             
-            toastTitle.textContent = title;
-            toastMessage.textContent = message;
+            const icon = document.getElementById('toastIcon');
+            const wrapper = document.getElementById('toastIconWrapper');
             
             if (type === 'error') {
-                toastIcon.className = 'fa-solid fa-exclamation text-red-400 text-sm';
-                toastIconWrapper.className = 'bg-red-500/20 p-1.5 rounded-full flex items-center justify-center';
+                icon.className = 'fa-solid fa-exclamation text-sm text-red-400';
+                wrapper.className = 'bg-red-500/20 text-red-400 w-8 h-8 rounded-full flex items-center justify-center';
             } else {
-                toastIcon.className = 'fa-solid fa-check text-emerald-400 text-sm';
-                toastIconWrapper.className = 'bg-emerald-500/20 p-1.5 rounded-full flex items-center justify-center';
+                icon.className = 'fa-solid fa-check text-sm text-brand-400';
+                wrapper.className = 'bg-brand-500/20 text-brand-400 w-8 h-8 rounded-full flex items-center justify-center';
             }
             
             toast.classList.remove('translate-y-24', 'opacity-0');
-            setTimeout(() => {
-                toast.classList.add('translate-y-24', 'opacity-0');
-            }, 3500);
+            setTimeout(() => toast.classList.add('translate-y-24', 'opacity-0'), 3500);
         }
 
-        function openModal() {
+        // FOP Modal Logic
+        const fopModal = document.getElementById('fopModal');
+        const fopModalContent = document.getElementById('fopModalContent');
+        
+        function openFopModal() {
             renderFopGroupList();
             fopModal.classList.remove('hidden');
-            // Small delay to allow display block to render before animation
             setTimeout(() => {
                 fopModalContent.classList.remove('scale-95', 'opacity-0');
                 fopModalContent.classList.add('scale-100', 'opacity-100');
             }, 10);
         }
-
-        function closeModal() {
+        function closeFopModal() {
             fopModalContent.classList.remove('scale-100', 'opacity-100');
             fopModalContent.classList.add('scale-95', 'opacity-0');
+            setTimeout(() => { fopModal.classList.add('hidden'); renderTable(); }, 300);
+        }
+        
+        document.getElementById('openFopModalBtn').addEventListener('click', openFopModal);
+        document.getElementById('closeFopModalBtn').addEventListener('click', closeFopModal);
+        document.getElementById('saveFopModalBtn').addEventListener('click', closeFopModal);
+        document.getElementById('fopModalBackdrop').addEventListener('click', closeFopModal);
+
+        // Delete Modal Logic
+        const deleteModal = document.getElementById('deleteModal');
+        const deleteModalContent = document.getElementById('deleteModalContent');
+        const deleteCriteriaSelect = document.getElementById('deleteCriteriaSelect');
+        const deleteValueSelect = document.getElementById('deleteValueSelect');
+        const confirmDeleteBtn = document.getElementById('confirmDeleteBtn');
+
+        function openDeleteModal() {
+            populateDeleteValues();
+            deleteModal.classList.remove('hidden');
             setTimeout(() => {
-                fopModal.classList.add('hidden');
-                if (globalRawData.length > 0) {
-                    renderTable();
-                }
-            }, 300); // Wait for transition
+                deleteModalContent.classList.remove('scale-95', 'opacity-0');
+                deleteModalContent.classList.add('scale-100', 'opacity-100');
+            }, 10);
         }
-
-        openFopModalBtn.addEventListener('click', openModal);
-        closeFopModalBtn.addEventListener('click', closeModal);
-        saveFopModalBtn.addEventListener('click', closeModal);
-        fopModalBackdrop.addEventListener('click', closeModal);
-
-        // --- FUNGSI HAPUS DATA (DENGAN PENGECEKAN AMAN) ---
-        if (openDeleteModalBtn && deleteModal) {
-            function openDeleteModal() {
-                populateDeleteValues();
-                deleteModal.classList.remove('hidden');
-                setTimeout(() => {
-                    deleteModalContent.classList.remove('scale-95', 'opacity-0');
-                    deleteModalContent.classList.add('scale-100', 'opacity-100');
-                }, 10);
-            }
-
-            function closeDeleteModal() {
-                deleteModalContent.classList.remove('scale-100', 'opacity-100');
-                deleteModalContent.classList.add('scale-95', 'opacity-0');
-                setTimeout(() => {
-                    deleteModal.classList.add('hidden');
-                }, 300);
-            }
-
-            function populateDeleteValues() {
-                const criteria = deleteCriteriaSelect.value;
-                deleteValueSelect.innerHTML = '';
-                
-                if (criteria === 'bulan') {
-                    let months = new Set();
-                    globalRawData.forEach(row => {
-                        let rawDate = (row['expect_delivery_tm'] || row['expect_delivery_time'] || '').trim();
-                        if (rawDate && rawDate.length >= 7) {
-                            months.add(rawDate.substring(0, 7)); // Ekstrak "YYYY-MM"
-                        }
-                    });
-                    
-                    let sortedMonths = Array.from(months).sort().reverse();
-                    if (sortedMonths.length === 0) {
-                        deleteValueSelect.innerHTML = '<option value="">Tidak ada data bulan</option>';
-                        confirmDeleteBtn.disabled = true;
-                    } else {
-                        confirmDeleteBtn.disabled = false;
-                        sortedMonths.forEach(month => {
-                            let opt = document.createElement('option');
-                            opt.value = month; opt.textContent = month;
-                            deleteValueSelect.appendChild(opt);
-                        });
-                    }
-                } else if (criteria === 'destinasi') {
-                    let sortedHubs = Array.from(availableHubs).sort();
-                    if (sortedHubs.length === 0) {
-                        deleteValueSelect.innerHTML = '<option value="">Tidak ada data destinasi</option>';
-                        confirmDeleteBtn.disabled = true;
-                    } else {
-                        confirmDeleteBtn.disabled = false;
-                        sortedHubs.forEach(hub => {
-                            let opt = document.createElement('option');
-                            opt.value = hub; opt.textContent = hub;
-                            deleteValueSelect.appendChild(opt);
-                        });
-                    }
-                }
-            }
-
-            // Event Listeners untuk Hapus
-            deleteCriteriaSelect.addEventListener('change', populateDeleteValues);
-            openDeleteModalBtn.addEventListener('click', openDeleteModal);
-            closeDeleteModalBtn.addEventListener('click', closeDeleteModal);
-            cancelDeleteBtn.addEventListener('click', closeDeleteModal);
-            deleteModalBackdrop.addEventListener('click', closeDeleteModal);
-
-            confirmDeleteBtn.addEventListener('click', async () => {
-                const criteria = deleteCriteriaSelect.value;
-                const value = deleteValueSelect.value;
-                if (!value) return;
-
-                confirmDeleteBtn.innerHTML = '<i class="fa-solid fa-spinner spinner"></i> Menghapus...';
-                confirmDeleteBtn.disabled = true;
-
-                try {
-                    let queryUrl = `${SUPABASE_BASE_URL}awb_data?`;
-                    // Gunakan "like" pada PostgREST Supabase untuk menghapus prefix tertentu
-                    if (criteria === 'bulan') {
-                        queryUrl += `expect_delivery_tm=like.${value}*`;
-                    } else if (criteria === 'destinasi') {
-                        queryUrl += `destination_uz=like.${value}*`;
-                    }
-
-                    const response = await fetch(queryUrl, {
-                        method: 'DELETE',
-                        headers: {
-                            'apikey': supabaseKey,
-                            'Authorization': `Bearer ${supabaseKey}`
-                        }
-                    });
-
-                    if (response.ok) {
-                        showToast("Terhapus", `Data ${criteria} ${value} berhasil dihapus.`, "success");
-                        closeDeleteModal();
-                        // Refresh data setelah berhasil dihapus
-                        await loadAwbDataFromSupabase(); 
-                    } else {
-                        throw new Error("Gagal menghapus data.");
-                    }
-                } catch (error) {
-                    console.error("Delete error:", error);
-                    showToast("Gagal", "Terjadi kesalahan saat menghapus data.", "error");
-                } finally {
-                    confirmDeleteBtn.innerHTML = '<i class="fa-solid fa-trash-can"></i> Hapus Permanen';
-                    confirmDeleteBtn.disabled = false;
-                }
-            });
+        function closeDeleteModal() {
+            deleteModalContent.classList.remove('scale-100', 'opacity-100');
+            deleteModalContent.classList.add('scale-95', 'opacity-0');
+            setTimeout(() => deleteModal.classList.add('hidden'), 300);
         }
-        // --- SELESAI FUNGSI HAPUS DATA ---
-
-        function resetFopForm() {
-            fopCategoryInput.value = '';
-            fopValuesInput.value = '';
-            editingFopIndex = -1;
-            addFopGroupBtn.innerHTML = '<i class="fa-solid fa-plus"></i> <span>Tambah</span>';
-            cancelEditFopBtn.classList.add('hidden');
-        }
-
-        cancelEditFopBtn.addEventListener('click', resetFopForm);
-
-        addFopGroupBtn.addEventListener('click', () => {
-            let categoryName = fopCategoryInput.value.trim();
-            let fopValuesRaw = fopValuesInput.value.trim();
-
-            if (!categoryName || !fopValuesRaw) {
-                showToast("Error", "Harap isi Nama Kategori dan Nilai FOP.", "error");
-                return;
-            }
-
-            let fopValuesArray = fopValuesRaw.split(',').map(v => v.trim()).filter(v => v !== '');
-            if (fopValuesArray.length === 0) return;
-
-            if (editingFopIndex >= 0) {
-                fopGroupConfig[editingFopIndex] = { category: categoryName, items: fopValuesArray };
-                showToast("Sukses", "Aturan berhasil diperbarui.");
+        
+        function populateDeleteValues() {
+            const criteria = deleteCriteriaSelect.value;
+            deleteValueSelect.innerHTML = '';
+            let options = [];
+            
+            if (criteria === 'bulan') {
+                let months = new Set();
+                globalRawData.forEach(row => {
+                    let d = (row['expect_delivery_tm'] || '').trim();
+                    if (d.length >= 7) months.add(d.substring(0, 7));
+                });
+                options = Array.from(months).sort().reverse();
             } else {
-                fopGroupConfig.push({ category: categoryName, items: fopValuesArray });
-                showToast("Sukses", "Aturan baru ditambahkan.");
+                options = Array.from(availableHubs).sort();
             }
 
-            saveFopConfigToStorage();
-            resetFopForm();
-            renderFopGroupList();
-        });
-
-        window.editFopGroup = function(index) {
-            editingFopIndex = index;
-            let group = fopGroupConfig[index];
-            fopCategoryInput.value = group.category;
-            fopValuesInput.value = group.items.join(', ');
-            
-            addFopGroupBtn.innerHTML = '<i class="fa-solid fa-check"></i> <span>Simpan Edit</span>';
-            cancelEditFopBtn.classList.remove('hidden');
-            fopCategoryInput.focus();
-        }
-
-        window.deleteFopGroup = function(index) {
-            fopGroupConfig.splice(index, 1);
-            saveFopConfigToStorage();
-            if (editingFopIndex === index) resetFopForm();
-            renderFopGroupList();
-            showToast("Dihapus", "Aturan berhasil dihapus.");
-        }
-
-        function renderFopGroupList() {
-            if (fopGroupConfig.length === 0) {
-                emptyFopState.classList.remove('hidden');
-                fopGroupTableBody.innerHTML = '';
-                return;
+            if (options.length === 0) {
+                deleteValueSelect.innerHTML = '<option value="">Data Kosong</option>';
+                confirmDeleteBtn.disabled = true;
+            } else {
+                confirmDeleteBtn.disabled = false;
+                options.forEach(opt => {
+                    let el = document.createElement('option');
+                    el.value = opt; el.textContent = opt;
+                    deleteValueSelect.appendChild(el);
+                });
             }
-
-            emptyFopState.classList.add('hidden');
-            let html = '';
-            fopGroupConfig.forEach((group, index) => {
-                let itemsBadges = group.items.map(item => `<span class="inline-block bg-indigo-50 border border-indigo-100 text-indigo-700 px-2 py-1 rounded-md text-[10px] font-bold mb-1 mr-1.5 shadow-sm">${item}</span>`).join('');
-                
-                html += `
-                <tr class="hover:bg-gray-50 transition-colors group">
-                    <td class="px-5 py-3 font-bold text-gray-900 border-b border-gray-100">${group.category}</td>
-                    <td class="px-5 py-3 border-b border-gray-100">${itemsBadges}</td>
-                    <td class="px-5 py-3 text-center whitespace-nowrap border-b border-gray-100">
-                        <div class="flex items-center justify-center gap-2 opacity-50 group-hover:opacity-100 transition-opacity">
-                            <button onclick="editFopGroup(${index})" class="text-gray-500 hover:text-indigo-600 bg-white hover:bg-indigo-50 border border-gray-200 w-7 h-7 rounded flex items-center justify-center shadow-sm transition-colors" title="Edit">
-                                <i class="fa-solid fa-pen text-[10px]"></i>
-                            </button>
-                            <button onclick="deleteFopGroup(${index})" class="text-gray-500 hover:text-red-600 bg-white hover:bg-red-50 border border-gray-200 w-7 h-7 rounded flex items-center justify-center shadow-sm transition-colors" title="Hapus">
-                                <i class="fa-solid fa-trash-can text-[10px]"></i>
-                            </button>
-                        </div>
-                    </td>
-                </tr>`;
-            });
-            fopGroupTableBody.innerHTML = html;
         }
 
-        uploadCsvBtn.addEventListener('click', () => fileInput.click());
+        deleteCriteriaSelect.addEventListener('change', populateDeleteValues);
+        document.getElementById('openDeleteModalBtn').addEventListener('click', openDeleteModal);
+        document.getElementById('closeDeleteModalBtn').addEventListener('click', closeDeleteModal);
+        document.getElementById('cancelDeleteBtn').addEventListener('click', closeDeleteModal);
+        document.getElementById('deleteModalBackdrop').addEventListener('click', closeDeleteModal);
 
-        fileInput.addEventListener('change', (e) => {
-            if (e.target.files.length > 0) handleFiles(e.target.files);
-        });
+        confirmDeleteBtn.addEventListener('click', async () => {
+            const criteria = deleteCriteriaSelect.value;
+            const value = deleteValueSelect.value;
+            if (!value) return;
 
-        showDestStagingToggle.addEventListener('change', renderTable);
-
-        copyAwbBtn.addEventListener('click', (e) => {
-            e.preventDefault();
-            performCopyAwb();
-        });
-
-        selectAllHubsBtn.addEventListener('click', () => {
-            const buttons = hubButtonsContainer.querySelectorAll('.hub-btn');
-            if (buttons.length === 0) return;
-            
-            isAllSelected = !isAllSelected;
-            
-            buttons.forEach(btn => {
-                if (isAllSelected) {
-                    btn.classList.add('active-hub');
-                    btn.className = "hub-btn px-3 py-1.5 rounded-lg text-sm font-semibold border transition-all cursor-pointer bg-indigo-600 text-white border-indigo-600 shadow-md active-hub";
-                } else {
-                    btn.classList.remove('active-hub');
-                    btn.className = "hub-btn px-3 py-1.5 rounded-lg text-sm font-semibold border transition-all cursor-pointer bg-white text-gray-700 border-gray-300 hover:border-indigo-400 hover:bg-indigo-50";
-                }
-            });
-            selectAllHubsBtn.textContent = isAllSelected ? "Deselect Semua" : "Pilih Semua";
-            renderTable();
-        });
-
-        async function handleFiles(files) {
-            const validFiles = Array.from(files).filter(f => f.name.toLowerCase().endsWith('.csv'));
-            
-            if (validFiles.length === 0) {
-                showToast("Format Salah", "Harap upload file berformat CSV.", "error");
-                return;
-            }
-
-            uploadOverlay.classList.remove('hidden');
-            uploadOverlay.classList.add('flex');
-            document.querySelector('#upload-overlay p.font-bold').textContent = "Mengunggah ke Database...";
-            document.querySelector('#upload-overlay p.text-sm').textContent = "Menyimpan data dan mem-filter duplikat";
-            
-            fileListContainer.innerHTML = ''; // Reset list indikator file
-            validFiles.forEach(file => {
-                const badge = document.createElement('span');
-                badge.className = 'bg-indigo-50 border border-indigo-100 text-indigo-700 text-[10px] px-2.5 py-1 rounded-md flex items-center gap-1.5 shadow-sm font-bold';
-                badge.innerHTML = `<i class="fa-solid fa-file-csv text-indigo-500"></i> ${file.name}`;
-                fileListContainer.appendChild(badge);
-            });
+            confirmDeleteBtn.innerHTML = '<i class="fa-solid fa-spinner spinner"></i> Menghapus...';
+            confirmDeleteBtn.disabled = true;
 
             try {
-                let allNewData = [];
-                const parsePromises = validFiles.map(file => {
-                    return new Promise((resolve, reject) => {
-                        Papa.parse(file, {
-                            header: true,
-                            skipEmptyLines: true,
-                            transformHeader: h => h.trim().toLowerCase(),
-                            complete: function(results) { resolve(results.data); },
-                            error: function(error) { reject(error); }
-                        });
-                    });
+                let queryUrl = `${SUPABASE_BASE_URL}awb_data?`;
+                queryUrl += criteria === 'bulan' ? `expect_delivery_tm=like.${value}*` : `destination_uz=like.${value}*`;
+
+                const response = await fetch(queryUrl, {
+                    method: 'DELETE', headers: { 'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}` }
                 });
 
-                const results = await Promise.all(parsePromises);
-                
-                // Susun data agar cocok dengan kolom di Supabase `awb_data`
-                results.forEach(fileData => {
-                    fileData.forEach(row => {
-                        let awb = row['awb_no'];
-                        if (awb) {
-                            let rawDate = row['expect_delivery_tm'] || row['expect_delivery_time'] || '';
-                            let destUz = row['destination_uz'] ? row['destination_uz'].substring(0, 3).toUpperCase() : '';
-                            let destStaging = row['destination_staging'] || '';
-                            let fopCode = row['fop_code_internal'] || '';
-
-                            allNewData.push({
-                                awb_no: awb.toString().trim(),
-                                destination_uz: destUz,
-                                destination_staging: destStaging,
-                                fop_code_internal: fopCode,
-                                expect_delivery_tm: rawDate
-                            });
-                        }
-                    });
-                });
-
-                if (allNewData.length > 0) {
-                    await uploadDataToSupabase(allNewData);
-                    // SETELAH UPLOAD SELESAI -> TARIK ULANG SEMUA DATA DARI DATABASE
-                    await loadAwbDataFromSupabase();
-                } else {
-                    showToast("Peringatan", "Tidak ada data AWB valid ditemukan", "error");
-                    uploadOverlay.classList.add('hidden');
-                    uploadOverlay.classList.remove('flex');
-                }
-
+                if (response.ok) {
+                    showToast("Terhapus", `Data ${value} berhasil dihapus.`);
+                    closeDeleteModal(); await loadAwbDataFromSupabase(); 
+                } else throw new Error();
             } catch (error) {
-                console.error("Error parsing files:", error);
-                showToast("Gagal", "Terjadi kesalahan saat membaca CSV.", "error");
-                uploadOverlay.classList.add('hidden');
-                uploadOverlay.classList.remove('flex');
+                showToast("Gagal", "Kesalahan saat menghapus.", "error");
+            } finally {
+                confirmDeleteBtn.innerHTML = '<i class="fa-solid fa-trash-can"></i> Hapus Permanen';
+                confirmDeleteBtn.disabled = false;
             }
-        }
-
-        async function uploadDataToSupabase(dataArray) {
-            const chunkSize = 1000;
-            for (let i = 0; i < dataArray.length; i += chunkSize) {
-                const chunk = dataArray.slice(i, i + chunkSize);
-                try {
-                    await fetch(`${SUPABASE_BASE_URL}awb_data`, {
-                        method: 'POST',
-                        headers: {
-                            'apikey': supabaseKey,
-                            'Authorization': `Bearer ${supabaseKey}`,
-                            'Content-Type': 'application/json',
-                            'Prefer': 'return=minimal, resolution=ignore-duplicates' // Tolak Duplikat (Primary Key: awb_no)
-                        },
-                        body: JSON.stringify(chunk)
-                    });
-                } catch (error) {
-                    console.error("Gagal mengunggah chunk", error);
-                }
-            }
-        }
+        });
 
         function processInitialData() {
-            availableDates.clear();
-            availableHubs.clear();
+            availableDates.clear(); availableHubs.clear();
             
             globalRawData.forEach(row => {
-                let rawDate = row['expect_delivery_tm'] || row['expect_delivery_time'] || '';
-                if (rawDate) {
-                    let datePart = rawDate.split(' ')[0].trim();
-                    if(datePart) availableDates.add(datePart);
-                }
-
-                let rawDestUz = row['destination_uz'] || '';
-                let destUz = rawDestUz.substring(0, 3).toUpperCase();
-                if(destUz) availableHubs.add(destUz);
+                let d = (row['expect_delivery_tm'] || '').split(' ')[0].trim();
+                if(d) availableDates.add(d);
+                let hub = (row['destination_uz'] || '').substring(0, 3).toUpperCase();
+                if(hub) availableHubs.add(hub);
             });
 
             let sortedDates = Array.from(availableDates).sort();
             
-            // Konfigurasi Flatpickr
-            if (fpDateFilterInstance) {
-                fpDateFilterInstance.destroy(); // Bersihkan instance sebelumnya
-            }
-            
+            if (fpDateFilterInstance) fpDateFilterInstance.destroy();
             fpDateFilterInstance = flatpickr("#dateFilter", {
-                mode: "range",
-                dateFormat: "Y-m-d",
-                placeholder: "Semua Tanggal",
+                mode: "range", dateFormat: "Y-m-d", placeholder: "Tentukan batas tanggal...",
                 minDate: sortedDates.length > 0 ? sortedDates[0] : null,
                 maxDate: sortedDates.length > 0 ? sortedDates[sortedDates.length - 1] : null,
-                onChange: function(selectedDates, dateStr, instance) {
-                    renderTable();
-                }
+                onChange: () => renderTable()
             });
 
             hubButtonsContainer.innerHTML = '';
             let sortedHubs = Array.from(availableHubs).sort();
             
             if (sortedHubs.length === 0) {
-                hubButtonsContainer.innerHTML = '<div class="text-sm text-gray-400 italic py-1">Tidak ada HUB ditemukan</div>';
+                hubButtonsContainer.innerHTML = '<div class="text-sm text-zinc-400 italic">Data kosong</div>';
                 selectAllHubsBtn.disabled = true;
             } else {
-                selectAllHubsBtn.disabled = false;
-                isAllSelected = true;
+                selectAllHubsBtn.disabled = false; isAllSelected = true;
                 selectAllHubsBtn.textContent = "Deselect Semua";
                 
                 sortedHubs.forEach(hub => {
                     let btn = document.createElement('button');
-                    btn.className = "hub-btn px-3 py-1.5 rounded-lg text-sm font-semibold border transition-all cursor-pointer bg-indigo-600 text-white border-indigo-600 shadow-md active-hub";
-                    btn.dataset.hub = hub;
-                    btn.textContent = hub;
+                    // GAYA BARU UNTUK CHIP HUB (Pill Shape)
+                    btn.className = "hub-btn px-4 py-1.5 rounded-full text-xs font-bold border transition-all cursor-pointer bg-brand-600 text-white border-brand-600 shadow-sm active-hub";
+                    btn.dataset.hub = hub; btn.textContent = hub;
                     btn.onclick = function() {
                         this.classList.toggle('active-hub');
                         if (this.classList.contains('active-hub')) {
-                            this.className = "hub-btn px-3 py-1.5 rounded-lg text-sm font-semibold border transition-all cursor-pointer bg-indigo-600 text-white border-indigo-600 shadow-md active-hub";
+                            this.className = "hub-btn px-4 py-1.5 rounded-full text-xs font-bold border transition-all cursor-pointer bg-brand-600 text-white border-brand-600 shadow-sm active-hub";
                         } else {
-                            this.className = "hub-btn px-3 py-1.5 rounded-lg text-sm font-semibold border transition-all cursor-pointer bg-white text-gray-700 border-gray-300 hover:border-indigo-400 hover:bg-indigo-50";
+                            this.className = "hub-btn px-4 py-1.5 rounded-full text-xs font-bold border transition-all cursor-pointer bg-white text-zinc-500 border-zinc-200 hover:border-brand-300 hover:text-brand-600";
                         }
-                        
-                        // Cek apakah semua tombol aktif untuk merubah teks "Pilih Semua/Deselect Semua"
-                        const allBtns = hubButtonsContainer.querySelectorAll('.hub-btn');
                         const activeBtns = hubButtonsContainer.querySelectorAll('.active-hub');
-                        isAllSelected = allBtns.length === activeBtns.length;
+                        isAllSelected = sortedHubs.length === activeBtns.length;
                         selectAllHubsBtn.textContent = isAllSelected ? "Deselect Semua" : "Pilih Semua";
-                        
                         renderTable();
                     };
                     hubButtonsContainer.appendChild(btn);
@@ -964,28 +603,21 @@
         }
 
         function renderTable() {
-            const selectedDates = fpDateFilterInstance ? fpDateFilterInstance.selectedDates : [];
-            const filterStart = selectedDates.length > 0 ? flatpickr.formatDate(selectedDates[0], "Y-m-d") : null;
-            const filterEnd = selectedDates.length > 1 ? flatpickr.formatDate(selectedDates[1], "Y-m-d") : filterStart;
-            
-            const checkedHubs = Array.from(hubButtonsContainer.querySelectorAll('.active-hub')).map(btn => btn.dataset.hub);
+            const dates = fpDateFilterInstance ? fpDateFilterInstance.selectedDates : [];
+            const fStart = dates.length > 0 ? flatpickr.formatDate(dates[0], "Y-m-d") : null;
+            const fEnd = dates.length > 1 ? flatpickr.formatDate(dates[1], "Y-m-d") : fStart;
+            const checkedHubs = Array.from(hubButtonsContainer.querySelectorAll('.active-hub')).map(b => b.dataset.hub);
             const showStaging = showDestStagingToggle.checked;
-            let filteredRows = 0;
-            let totalUniqueAwbOverall = new Set();
             
-            let groupedData = {};
-            let headerStructure = {}; 
-            let categoryTotals = {}; 
+            let filteredRows = 0; let totalAwb = new Set();
+            let groupedData = {}; let headerStruct = {}; let catTotals = {}; 
             window.awbForClipboard = {};
-            
+
             globalRawData.forEach(row => {
-                let rawDate = (row['expect_delivery_tm'] || row['expect_delivery_time'] || '').split(' ')[0].trim();
-                let rawDestUz = row['destination_uz'] || '';
-                let destUz = rawDestUz.substring(0, 3).toUpperCase();
+                let rawDate = (row['expect_delivery_tm'] || '').split(' ')[0].trim();
+                let destUz = (row['destination_uz'] || '').substring(0, 3).toUpperCase();
                 
-                if (filterStart && filterEnd) {
-                    if (rawDate < filterStart || rawDate > filterEnd) return;
-                } 
+                if (fStart && fEnd && (rawDate < fStart || rawDate > fEnd)) return;
                 if (!checkedHubs.includes(destUz) && destUz !== '') return;
 
                 let destStaging = row['destination_staging'] || '(Blank)';
@@ -993,292 +625,365 @@
                 let awbNo = row['awb_no'];
 
                 if (!destUz && destStaging === '(Blank)' && !awbNo) return; 
-                
-                filteredRows++;
-                if (awbNo) {
-                    totalUniqueAwbOverall.add(awbNo);
-                }
+                filteredRows++; if (awbNo) totalAwb.add(awbNo);
 
                 let category = rawFop;
-                let normalizedRaw = rawFop.trim().toLowerCase();
-                
+                let norm = rawFop.trim().toLowerCase();
                 for (let group of fopGroupConfig) {
-                    let isMatch = group.items.find(val => val.trim().toLowerCase() === normalizedRaw);
-                    if (isMatch) {
-                        category = group.category;
-                        break;
+                    if (group.items.find(v => v.trim().toLowerCase() === norm)) {
+                        category = group.category; break;
                     }
                 }
 
                 let catLower = category.toLowerCase();
                 let isExpandable = (catLower === 'mid mile' || catLower === 'transport');
-                let subColumn = isExpandable ? rawFop : null;
+                let subCol = isExpandable ? rawFop : null;
 
                 if (awbNo && isExpandable) {
-                    let catName = (catLower === 'mid mile') ? 'Mid Mile' : 'Transport';
+                    let cName = catLower === 'mid mile' ? 'Mid Mile' : 'Transport';
                     if (!window.awbForClipboard[destUz]) window.awbForClipboard[destUz] = {};
-                    if (!window.awbForClipboard[destUz][catName]) window.awbForClipboard[destUz][catName] = new Set();
-                    window.awbForClipboard[destUz][catName].add(`${awbNo} ${rawFop}`);
+                    if (!window.awbForClipboard[destUz][cName]) window.awbForClipboard[destUz][cName] = new Set();
+                    window.awbForClipboard[destUz][cName].add(`${awbNo} ${rawFop}`);
                 }
 
-                if (!headerStructure[category]) headerStructure[category] = new Set();
-                headerStructure[category].add(subColumn);
+                if (!headerStruct[category]) headerStruct[category] = new Set();
+                headerStruct[category].add(subCol);
 
                 if (!groupedData[destUz]) groupedData[destUz] = {};
-                let stagingKey = showStaging ? destStaging : 'ALL';
-                if (!groupedData[destUz][stagingKey]) groupedData[destUz][stagingKey] = { fopData: {} };
+                let sKey = showStaging ? destStaging : 'ALL';
+                if (!groupedData[destUz][sKey]) groupedData[destUz][sKey] = { data: {} };
 
-                let fopKey = category + (subColumn ? '|||' + subColumn : '');
-                if (!groupedData[destUz][stagingKey].fopData[fopKey]) {
-                    groupedData[destUz][stagingKey].fopData[fopKey] = new Set();
-                }
-
+                let fKey = category + (subCol ? '|||' + subCol : '');
+                if (!groupedData[destUz][sKey].data[fKey]) groupedData[destUz][sKey].data[fKey] = new Set();
+                
                 if (awbNo) {
-                    let isNewAwb = !groupedData[destUz][stagingKey].fopData[fopKey].has(awbNo);
-                    groupedData[destUz][stagingKey].fopData[fopKey].add(awbNo);
-                    if (isNewAwb) categoryTotals[category] = (categoryTotals[category] || 0) + 1;
+                    let isNew = !groupedData[destUz][sKey].data[fKey].has(awbNo);
+                    groupedData[destUz][sKey].data[fKey].add(awbNo);
+                    if (isNew) catTotals[category] = (catTotals[category] || 0) + 1;
                 }
             });
 
-            statTotalRows.textContent = filteredRows.toLocaleString('id-ID');
-            statTotalAwb.textContent = totalUniqueAwbOverall.size.toLocaleString('id-ID');
-
-            let categories = Object.keys(headerStructure).sort((a, b) => {
-                let aLower = a.toLowerCase();
-                let bLower = b.toLowerCase();
-                if (aLower === 'mid mile') return -1;
-                if (bLower === 'mid mile') return 1;
-                if (aLower === 'transport') return -1;
-                if (bLower === 'transport') return 1;
-                return (categoryTotals[b] || 0) - (categoryTotals[a] || 0);
+            let cats = Object.keys(headerStruct).sort((a, b) => {
+                let al = a.toLowerCase(); let bl = b.toLowerCase();
+                if (al === 'mid mile') return -1; if (bl === 'mid mile') return 1;
+                if (al === 'transport') return -1; if (bl === 'transport') return 1;
+                return (catTotals[b] || 0) - (catTotals[a] || 0);
             });
+
+            // GANTI STATISTIK BARIS MENJADI DINAMIS PER KATEGORI FOP
+            const statsContainer = document.getElementById('stats-container');
+            let statsHtml = `
+                <div class="col-span-full flex items-center justify-between p-3 rounded-xl bg-brand-50 border border-brand-100">
+                    <div class="flex items-center gap-3">
+                        <div class="bg-brand-200/50 p-2 rounded-lg text-brand-600"><i class="fa-solid fa-box"></i></div>
+                        <div>
+                            <p class="text-[10px] text-brand-700 font-bold uppercase tracking-wider mb-0.5">Total Keseluruhan AWB</p>
+                            <p class="text-xl font-black text-brand-900 leading-none">${totalAwb.size.toLocaleString('id-ID')}</p>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            cats.forEach(cat => {
+                let count = catTotals[cat] || 0;
+                statsHtml += `
+                    <div class="flex flex-col justify-center p-3 rounded-xl bg-zinc-50 border border-zinc-100 shadow-sm">
+                        <p class="text-[10px] text-zinc-500 font-bold uppercase tracking-wider mb-1 truncate" title="${cat}">${cat}</p>
+                        <p class="text-lg font-black text-zinc-800 leading-none">${count.toLocaleString('id-ID')}</p>
+                    </div>
+                `;
+            });
+            statsContainer.innerHTML = statsHtml;
 
             window.currentExportHeaders = ['HUB']; 
             if(showStaging) window.currentExportHeaders.push('Dest Staging');
             
-            // Build Headers UI
+            // BUILD UI HEADERS (RE-STYLED FOR REVAMP)
             let theadHtml = `<tr>
-                <th rowspan="2" class="sticky left-0 z-20 bg-gray-50 px-5 py-4 text-left text-xs font-bold text-gray-600 uppercase tracking-wider border-b-2 border-r border-gray-200 shadow-[inset_-1px_0_0_0_#e5e7eb] align-middle">HUB</th>
-                ${showStaging ? '<th rowspan="2" class="bg-gray-50 px-5 py-4 text-left text-xs font-bold text-gray-600 uppercase tracking-wider border-b-2 border-gray-200 align-middle whitespace-nowrap">Dest Staging</th>' : ''}`;
+                <th rowspan="2" class="sticky-corner bg-zinc-50/95 backdrop-blur px-5 py-4 text-left text-[11px] font-extrabold text-zinc-500 uppercase tracking-widest border-b border-zinc-200 border-r border-r-zinc-100 shadow-[inset_-1px_0_0_0_#f4f4f5]">HUB</th>
+                ${showStaging ? '<th rowspan="2" class="sticky-header bg-zinc-50/95 backdrop-blur px-5 py-4 text-left text-[11px] font-extrabold text-zinc-500 uppercase tracking-widest border-b border-zinc-200 border-r border-r-zinc-100 whitespace-nowrap">Dest Staging</th>' : ''}`;
             
-            let row2Html = `<tr>`;
-            let hasRow2 = false;
+            let row2Html = `<tr>`; let hasRow2 = false;
 
-            categories.forEach(cat => {
-                let subCols = Array.from(headerStructure[cat]).sort();
-                let isExpandable = subCols.length > 0 && subCols[0] !== null;
+            cats.forEach(cat => {
+                let subs = Array.from(headerStruct[cat]).sort();
+                let isExp = subs.length > 0 && subs[0] !== null;
 
-                if (isExpandable) {
+                if (isExp) {
                     hasRow2 = true;
-                    theadHtml += `<th colspan="${subCols.length}" class="bg-gray-100 px-5 py-2 text-center text-[11px] font-black text-gray-700 uppercase tracking-wider border-b border-l border-gray-200">${cat}</th>`;
-                    subCols.forEach(sub => {
-                        row2Html += `<th class="bg-gray-50 px-5 py-2 text-right text-[10px] font-bold text-gray-500 uppercase tracking-wider border-b border-l border-gray-200 whitespace-nowrap">${sub}</th>`;
+                    theadHtml += `<th colspan="${subs.length}" class="sticky-header bg-zinc-100/95 backdrop-blur px-4 py-2.5 text-center text-[10px] font-extrabold text-zinc-500 uppercase tracking-widest border-b border-zinc-200 border-r border-r-zinc-100">${cat}</th>`;
+                    subs.forEach(sub => {
+                        row2Html += `<th class="sticky-header top-[45px] bg-zinc-50/95 backdrop-blur px-4 py-2.5 text-right text-[10px] font-extrabold text-zinc-500 uppercase tracking-widest border-b border-zinc-200 border-r border-r-zinc-100 whitespace-nowrap">${sub}</th>`;
                         window.currentExportHeaders.push(`${cat} - ${sub}`);
                     });
                 } else {
-                    theadHtml += `<th rowspan="2" class="bg-gray-50 px-5 py-4 text-right text-[11px] font-black text-gray-600 uppercase tracking-wider border-b-2 border-l border-gray-200 align-middle whitespace-nowrap">${cat}</th>`;
+                    theadHtml += `<th rowspan="2" class="sticky-header bg-zinc-50/95 backdrop-blur px-4 py-4 text-right text-[11px] font-extrabold text-zinc-500 uppercase tracking-widest border-b border-zinc-200 border-r border-r-zinc-100 whitespace-nowrap">${cat}</th>`;
                     window.currentExportHeaders.push(cat);
                 }
             });
 
-            theadHtml += `<th rowspan="2" class="bg-indigo-50 px-5 py-4 text-right text-[11px] font-black text-indigo-700 uppercase tracking-wider border-b-2 border-l border-indigo-200 align-middle">Grand Total</th></tr>`;
-            window.currentExportHeaders.push('Grand Total');
-
-            if (hasRow2) {
-                row2Html += `</tr>`;
-                theadHtml += row2Html;
-            }
-
+            theadHtml += `<th rowspan="2" class="sticky-header bg-brand-50/95 backdrop-blur px-5 py-4 text-right text-[11px] font-extrabold text-brand-700 uppercase tracking-widest border-b border-brand-200">Total</th></tr>`;
+            window.currentExportHeaders.push('Total');
+            if (hasRow2) theadHtml += row2Html + `</tr>`;
             tableHead.innerHTML = theadHtml;
 
-            // Build Rows UI
-            let tbodyHtml = '';
-            let hubKeys = Object.keys(groupedData).sort(); 
-
-            if (hubKeys.length === 0) {
-                emptyState.classList.remove('hidden');
-                dataTable.classList.add('hidden');
-                return;
+            // BUILD UI BODY (RE-STYLED)
+            let tbodyHtml = ''; let hubs = Object.keys(groupedData).sort(); 
+            if (hubs.length === 0) {
+                emptyState.classList.remove('hidden'); dataTable.classList.add('hidden'); return;
             }
-
-            emptyState.classList.add('hidden');
-            dataTable.classList.remove('hidden');
+            emptyState.classList.add('hidden'); dataTable.classList.remove('hidden');
 
             window.currentExportData = [];
-            let columnTotals = {};
-            let grandTotalAllRows = 0;
+            let colTotals = {}; let grandTotal = 0;
 
-            hubKeys.forEach(hub => {
-                let stagingKeys = Object.keys(groupedData[hub]).sort();
-                let rowspan = stagingKeys.length;
-
-                stagingKeys.forEach((staging, index) => {
-                    let item = groupedData[hub][staging];
-                    let rowTotal = 0;
-                    let exportRow = [hub];
-                    if(showStaging) exportRow.push(staging === 'ALL' ? '-' : staging);
+            hubs.forEach(hub => {
+                let stgKeys = Object.keys(groupedData[hub]).sort();
+                stgKeys.forEach((stg, idx) => {
+                    let item = groupedData[hub][stg]; let rTotal = 0;
+                    let expRow = [hub]; if(showStaging) expRow.push(stg === 'ALL' ? '-' : stg);
                     
-                    tbodyHtml += `<tr class="hover:bg-gray-50/70 transition-colors group">`;
-                    
-                    if (index === 0) {
-                        tbodyHtml += `<td rowspan="${showStaging ? rowspan : 1}" class="sticky left-0 z-10 bg-white group-hover:bg-gray-50 px-5 py-3 text-sm font-bold text-gray-900 border-b border-r border-gray-100 shadow-[inset_-1px_0_0_0_#e5e7eb] align-top whitespace-nowrap transition-colors">${hub || '-'}</td>`;
+                    tbodyHtml += `<tr class="hover:bg-zinc-50/80 group">`;
+                    if (idx === 0) {
+                        tbodyHtml += `<td rowspan="${showStaging ? stgKeys.length : 1}" class="sticky-col bg-white group-hover:bg-zinc-50/80 px-5 py-3 text-sm font-bold text-zinc-800 border-b border-zinc-100 border-r border-r-zinc-100 shadow-[inset_-1px_0_0_0_#f4f4f5] align-top whitespace-nowrap">${hub || '-'}</td>`;
                     }
+                    if (showStaging) tbodyHtml += `<td class="px-5 py-3 text-sm font-semibold text-zinc-600 border-b border-zinc-100 border-r border-r-zinc-100 whitespace-nowrap">${stg}</td>`;
                     
-                    if (showStaging) {
-                        tbodyHtml += `<td class="px-5 py-3 text-sm font-medium text-gray-600 border-b border-gray-100 whitespace-nowrap">${staging}</td>`;
-                    }
-                    
-                    let cellHtmls = [];
-                    categories.forEach(cat => {
-                        let subCols = Array.from(headerStructure[cat]).sort();
-                        let isExpandable = subCols.length > 0 && subCols[0] !== null;
+                    let cells = [];
+                    cats.forEach(cat => {
+                        let subs = Array.from(headerStruct[cat]).sort();
+                        let isExp = subs.length > 0 && subs[0] !== null;
                         
-                        let formatCount = (count) => count > 0 ? count.toLocaleString('id-ID') : '<span class="text-gray-300">-</span>';
+                        let format = (cnt) => cnt > 0 ? cnt.toLocaleString('id-ID') : '<span class="text-zinc-300 font-normal">-</span>';
 
-                        if (isExpandable) {
-                            subCols.forEach(sub => {
-                                let fopKey = cat + '|||' + sub;
-                                let count = item.fopData[fopKey] ? item.fopData[fopKey].size : 0;
-                                rowTotal += count;
-                                columnTotals[fopKey] = (columnTotals[fopKey] || 0) + count;
-                                cellHtmls.push(`<td class="px-5 py-3 text-right text-sm font-medium text-gray-700 border-b border-l border-gray-100 tabular-nums">${formatCount(count)}</td>`);
-                                exportRow.push(count);
+                        if (isExp) {
+                            subs.forEach(sub => {
+                                let key = cat + '|||' + sub;
+                                let cnt = item.data[key] ? item.data[key].size : 0;
+                                rTotal += cnt; colTotals[key] = (colTotals[key] || 0) + cnt;
+                                cells.push(`<td class="px-4 py-3 text-right text-sm font-medium text-zinc-700 border-b border-zinc-100 border-r border-r-zinc-50 tabular-nums">${format(cnt)}</td>`);
+                                expRow.push(cnt);
                             });
                         } else {
-                            let fopKey = cat;
-                            let count = item.fopData[fopKey] ? item.fopData[fopKey].size : 0;
-                            rowTotal += count;
-                            columnTotals[fopKey] = (columnTotals[fopKey] || 0) + count;
-                            cellHtmls.push(`<td class="px-5 py-3 text-right text-sm font-medium text-gray-700 border-b border-l border-gray-100 tabular-nums">${formatCount(count)}</td>`);
-                            exportRow.push(count);
+                            let cnt = item.data[cat] ? item.data[cat].size : 0;
+                            rTotal += cnt; colTotals[cat] = (colTotals[cat] || 0) + cnt;
+                            cells.push(`<td class="px-4 py-3 text-right text-sm font-medium text-zinc-700 border-b border-zinc-100 border-r border-r-zinc-50 tabular-nums">${format(cnt)}</td>`);
+                            expRow.push(cnt);
                         }
                     });
 
-                    tbodyHtml += cellHtmls.join('');
-                    tbodyHtml += `<td class="px-5 py-3 text-right text-sm font-bold text-indigo-700 border-b border-l border-indigo-100 bg-indigo-50/30 tabular-nums">${rowTotal.toLocaleString('id-ID')}</td></tr>`;
-                    
-                    grandTotalAllRows += rowTotal;
-                    exportRow.push(rowTotal);
-                    window.currentExportData.push(exportRow);
+                    tbodyHtml += cells.join('') + `<td class="px-5 py-3 text-right text-sm font-extrabold text-brand-700 border-b border-brand-100/50 bg-brand-50/30 tabular-nums">${rTotal.toLocaleString('id-ID')}</td></tr>`;
+                    grandTotal += rTotal; expRow.push(rTotal);
+                    window.currentExportData.push(expRow);
                 });
             });
 
-            let colspanStaging = showStaging ? 2 : 1;
-            tbodyHtml += `<tr class="bg-gray-900 text-white font-bold sticky bottom-0 z-20 shadow-[0_-4px_10px_rgba(0,0,0,0.1)]">`;
-            tbodyHtml += `<td colspan="${colspanStaging}" class="sticky left-0 bg-gray-900 px-5 py-4 text-right text-[11px] uppercase tracking-wider border-r border-gray-700 shadow-[inset_-1px_0_0_0_#374151]">TOTAL KESELURUHAN</td>`;
+            // Grand Total Row
+            let colSpan = showStaging ? 2 : 1;
+            tbodyHtml += `<tr class="bg-zinc-900 text-white sticky bottom-0 z-20">`;
+            tbodyHtml += `<td colspan="${colSpan}" class="sticky-col bg-zinc-900 px-5 py-4 text-right text-[11px] font-extrabold uppercase tracking-widest border-r border-zinc-800 shadow-[inset_-1px_0_0_0_#27272a]">Total Keseluruhan</td>`;
             
-            let exportTotalRow = ['Total Keseluruhan'];
-            if (showStaging) exportTotalRow.push('');
+            let expTotal = ['Total Keseluruhan']; if (showStaging) expTotal.push('');
 
-            categories.forEach(cat => {
-                let subCols = Array.from(headerStructure[cat]).sort();
-                let isExpandable = subCols.length > 0 && subCols[0] !== null;
+            cats.forEach(cat => {
+                let subs = Array.from(headerStruct[cat]).sort();
+                let isExp = subs.length > 0 && subs[0] !== null;
 
-                if (isExpandable) {
-                    subCols.forEach(sub => {
-                        let fopKey = cat + '|||' + sub;
-                        let colTot = columnTotals[fopKey] || 0;
-                        tbodyHtml += `<td class="px-5 py-4 text-right text-sm border-l border-gray-700 tabular-nums">${colTot.toLocaleString('id-ID')}</td>`;
-                        exportTotalRow.push(colTot);
+                if (isExp) {
+                    subs.forEach(sub => {
+                        let tot = colTotals[cat + '|||' + sub] || 0;
+                        tbodyHtml += `<td class="px-4 py-4 text-right text-sm font-bold border-r border-zinc-800 tabular-nums">${tot.toLocaleString('id-ID')}</td>`;
+                        expTotal.push(tot);
                     });
                 } else {
-                    let fopKey = cat;
-                    let colTot = columnTotals[fopKey] || 0;
-                    tbodyHtml += `<td class="px-5 py-4 text-right text-sm border-l border-gray-700 tabular-nums">${colTot.toLocaleString('id-ID')}</td>`;
-                    exportTotalRow.push(colTot);
+                    let tot = colTotals[cat] || 0;
+                    tbodyHtml += `<td class="px-4 py-4 text-right text-sm font-bold border-r border-zinc-800 tabular-nums">${tot.toLocaleString('id-ID')}</td>`;
+                    expTotal.push(tot);
                 }
             });
 
-            tbodyHtml += `<td class="px-5 py-4 text-right text-base text-indigo-300 bg-gray-800 border-l border-gray-700 tabular-nums">${grandTotalAllRows.toLocaleString('id-ID')}</td></tr>`;
-            exportTotalRow.push(grandTotalAllRows);
-            window.currentExportData.push(exportTotalRow);
-
+            tbodyHtml += `<td class="px-5 py-4 text-right text-base text-brand-300 bg-black font-black tabular-nums">${grandTotal.toLocaleString('id-ID')}</td></tr>`;
+            expTotal.push(grandTotal); window.currentExportData.push(expTotal);
             tableBody.innerHTML = tbodyHtml;
         }
 
-        window.performCopyAwb = function() {
-            if (!window.awbForClipboard || Object.keys(window.awbForClipboard).length === 0) {
-                showToast("Kosong", `Tidak ada data AWB Mid Mile & Transport.`, "error");
-                return;
-            }
+        document.getElementById('uploadCsvBtn').addEventListener('click', () => fileInput.click());
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) handleFiles(e.target.files);
+        });
+        showDestStagingToggle.addEventListener('change', renderTable);
+        selectAllHubsBtn.addEventListener('click', () => {
+            const btns = hubButtonsContainer.querySelectorAll('.hub-btn');
+            if (btns.length === 0) return;
+            isAllSelected = !isAllSelected;
+            btns.forEach(b => {
+                if (isAllSelected) b.className = "hub-btn px-4 py-1.5 rounded-full text-xs font-bold border transition-all cursor-pointer bg-brand-600 text-white border-brand-600 shadow-sm active-hub";
+                else b.className = "hub-btn px-4 py-1.5 rounded-full text-xs font-bold border transition-all cursor-pointer bg-white text-zinc-500 border-zinc-200 hover:border-brand-300 hover:text-brand-600";
+            });
+            selectAllHubsBtn.textContent = isAllSelected ? "Deselect Semua" : "Pilih Semua";
+            renderTable();
+        });
 
-            const selectedDates = fpDateFilterInstance ? fpDateFilterInstance.selectedDates : [];
-            let start = selectedDates.length > 0 ? flatpickr.formatDate(selectedDates[0], "Y-m-d") : "";
-            let end = selectedDates.length > 1 ? flatpickr.formatDate(selectedDates[1], "Y-m-d") : start;
+        async function handleFiles(files) {
+            const valid = Array.from(files).filter(f => f.name.toLowerCase().endsWith('.csv'));
+            if (valid.length === 0) return showToast("Format Salah", "Harap upload file CSV.", "error");
+
+            uploadOverlay.classList.replace('hidden', 'flex');
+            document.querySelector('#upload-overlay p.font-extrabold').textContent = "Memproses CSV...";
             
-            let dateText = 'Semua Tanggal';
-            if (start && end && start !== end) dateText = `${start} s.d ${end}`;
-            else if (start) dateText = `${start}`;
-            
-            let textToCopy = `Potential Breach EDD ${dateText} Kalsulamp\n\n`;
-            
-            let hubs = Object.keys(window.awbForClipboard).sort();
-            let totalCopied = 0;
-            
-            hubs.forEach(hub => {
-                let hubData = window.awbForClipboard[hub];
-                let hubText = `> ${hub || '(Blank)'}\n`;
-                let hasData = false;
-                
-                ['Mid Mile', 'Transport'].forEach(cat => {
-                    if (hubData[cat] && hubData[cat].size > 0) {
-                        hasData = true;
-                        hubText += `${cat}\n`;
-                        let awbs = Array.from(hubData[cat]);
-                        awbs.forEach(item => {
-                            hubText += `- ${item}\n`;
-                            totalCopied++;
-                        });
-                    }
+            try {
+                let allNew = [];
+                const promises = valid.map(file => new Promise((res, rej) => Papa.parse(file, {
+                    header: true, skipEmptyLines: true, transformHeader: h => h.trim().toLowerCase(),
+                    complete: r => res(r.data), error: e => rej(e)
+                })));
+
+                const results = await Promise.all(promises);
+                results.forEach(fData => {
+                    fData.forEach(r => {
+                        if (r['awb_no']) {
+                            allNew.push({
+                                awb_no: r['awb_no'].toString().trim(),
+                                destination_uz: r['destination_uz'] ? r['destination_uz'].substring(0, 3).toUpperCase() : '',
+                                destination_staging: r['destination_staging'] || '',
+                                fop_code_internal: r['fop_code_internal'] || '',
+                                expect_delivery_tm: r['expect_delivery_tm'] || r['expect_delivery_time'] || ''
+                            });
+                        }
+                    });
                 });
 
-                if (hasData) {
-                    textToCopy += hubText + '\n';
-                }
-            });
-
-            if (totalCopied > 0) {
-                const el = document.createElement('textarea');
-                el.value = textToCopy.trim();
-                document.body.appendChild(el);
-                el.select();
-                document.execCommand('copy');
-                document.body.removeChild(el);
-                showToast("Tersalin", `Berhasil menyalin ${totalCopied} AWB!`);
-            } else {
-                showToast("Kosong", `Tidak ada data AWB untuk disalin.`, "error");
+                if (allNew.length > 0) {
+                    await uploadDataToSupabase(allNew);
+                    await loadAwbDataFromSupabase();
+                } else throw new Error();
+            } catch (error) {
+                showToast("Gagal", "Kesalahan saat membaca CSV.", "error");
+                uploadOverlay.classList.replace('flex', 'hidden');
             }
+        }
+
+        async function uploadDataToSupabase(dataArray) {
+            for (let i = 0; i < dataArray.length; i += 1000) {
+                try {
+                    await fetch(`${SUPABASE_BASE_URL}awb_data`, {
+                        method: 'POST', headers: {
+                            'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}`,
+                            'Content-Type': 'application/json', 'Prefer': 'return=minimal, resolution=ignore-duplicates'
+                        }, body: JSON.stringify(dataArray.slice(i, i + 1000))
+                    });
+                } catch (e) {}
+            }
+        }
+
+        // FOP Modal Management
+        const cancelEditFopBtn = document.getElementById('cancelEditFopBtn');
+        const addFopGroupBtn = document.getElementById('addFopGroupBtn');
+        const fopCategoryInput = document.getElementById('fopCategoryInput');
+        const fopValuesInput = document.getElementById('fopValuesInput');
+
+        function resetFopForm() {
+            fopCategoryInput.value = ''; fopValuesInput.value = ''; editingFopIndex = -1;
+            addFopGroupBtn.innerHTML = '<i class="fa-solid fa-plus"></i> Tambah';
+            cancelEditFopBtn.classList.add('hidden');
+        }
+        cancelEditFopBtn.addEventListener('click', resetFopForm);
+        
+        addFopGroupBtn.addEventListener('click', () => {
+            let cat = fopCategoryInput.value.trim(); let vals = fopValuesInput.value.trim();
+            if (!cat || !vals) return showToast("Error", "Isi Nama & Nilai FOP.", "error");
+            
+            let arr = vals.split(',').map(v => v.trim()).filter(v => v !== '');
+            if (editingFopIndex >= 0) fopGroupConfig[editingFopIndex] = { category: cat, items: arr };
+            else fopGroupConfig.push({ category: cat, items: arr });
+
+            fetch(supabaseUrl, {
+                method: 'POST', headers: { 'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}`, 'Content-Type': 'application/json', 'Prefer': 'resolution=merge-duplicates' },
+                body: JSON.stringify({ id: 1, config: fopGroupConfig })
+            }).catch(e=>{});
+
+            localStorage.setItem('awbFopGroupConfig', JSON.stringify(fopGroupConfig));
+            resetFopForm(); renderFopGroupList();
+        });
+
+        window.editFopGroup = (idx) => {
+            editingFopIndex = idx; let g = fopGroupConfig[idx];
+            fopCategoryInput.value = g.category; fopValuesInput.value = g.items.join(', ');
+            addFopGroupBtn.innerHTML = '<i class="fa-solid fa-check"></i> Simpan';
+            cancelEditFopBtn.classList.remove('hidden'); fopCategoryInput.focus();
         };
 
-        exportBtn.addEventListener('click', () => {
-            if(dataTable.classList.contains('hidden') || !window.currentExportData) return;
+        window.deleteFopGroup = (idx) => {
+            fopGroupConfig.splice(idx, 1);
+            localStorage.setItem('awbFopGroupConfig', JSON.stringify(fopGroupConfig));
+            if (editingFopIndex === idx) resetFopForm();
+            renderFopGroupList();
+        };
 
-            let csvContent = "data:text/csv;charset=utf-8,";
-            csvContent += window.currentExportHeaders.map(h => `"${h}"`).join(',') + "\r\n";
-            window.currentExportData.forEach(row => {
-                let cols = row.map(val => `"${val}"`);
-                csvContent += cols.join(',') + "\r\n";
+        function renderFopGroupList() {
+            const body = document.getElementById('fopGroupTableBody');
+            const empty = document.getElementById('empty-fop-state');
+            if (fopGroupConfig.length === 0) { empty.classList.remove('hidden'); body.innerHTML = ''; return; }
+            
+            empty.classList.add('hidden'); let html = '';
+            fopGroupConfig.forEach((g, i) => {
+                let badges = g.items.map(it => `<span class="inline-block bg-zinc-100 border border-zinc-200 text-zinc-600 px-2.5 py-1 rounded-md text-[10px] font-bold mr-1.5 mb-1">${it}</span>`).join('');
+                html += `<tr class="hover:bg-zinc-50 transition-colors group">
+                    <td class="px-6 py-3 font-bold text-zinc-800">${g.category}</td>
+                    <td class="px-6 py-3">${badges}</td>
+                    <td class="px-6 py-3 text-center whitespace-nowrap">
+                        <div class="flex items-center justify-center gap-2 opacity-30 group-hover:opacity-100 transition-opacity">
+                            <button onclick="editFopGroup(${i})" class="text-zinc-400 hover:text-brand-600 w-8 h-8 rounded-full flex items-center justify-center bg-white border border-zinc-200 shadow-sm transition-colors" title="Edit"><i class="fa-solid fa-pen text-[11px]"></i></button>
+                            <button onclick="deleteFopGroup(${i})" class="text-zinc-400 hover:text-red-600 w-8 h-8 rounded-full flex items-center justify-center bg-white border border-zinc-200 shadow-sm transition-colors" title="Hapus"><i class="fa-solid fa-trash-can text-[11px]"></i></button>
+                        </div>
+                    </td></tr>`;
+            });
+            body.innerHTML = html;
+        }
+
+        // Export & Copy Logic
+        document.getElementById('copyAwbBtn').addEventListener('click', () => {
+            if (!window.awbForClipboard || Object.keys(window.awbForClipboard).length === 0) return showToast("Kosong", "Tidak ada AWB.", "error");
+            
+            const dates = fpDateFilterInstance ? fpDateFilterInstance.selectedDates : [];
+            let s = dates.length > 0 ? flatpickr.formatDate(dates[0], "Y-m-d") : "";
+            let e = dates.length > 1 ? flatpickr.formatDate(dates[1], "Y-m-d") : s;
+            let dTxt = (s && e && s !== e) ? `${s} s.d ${e}` : (s ? s : 'Semua Tanggal');
+            
+            let txt = `Potential Breach EDD ${dTxt} Kalsulamp\n\n`;
+            let total = 0;
+            
+            Object.keys(window.awbForClipboard).sort().forEach(hub => {
+                let hd = window.awbForClipboard[hub]; let ht = `> ${hub || '(Blank)'}\n`; let hasD = false;
+                ['Mid Mile', 'Transport'].forEach(cat => {
+                    if (hd[cat] && hd[cat].size > 0) {
+                        hasD = true; ht += `${cat}\n`;
+                        hd[cat].forEach(i => { ht += `- ${i}\n`; total++; });
+                    }
+                });
+                if (hasD) txt += ht + '\n';
             });
 
-            let encodedUri = encodeURI(csvContent);
-            let link = document.createElement("a");
-            link.setAttribute("href", encodedUri);
-            
-            const selectedDates = fpDateFilterInstance ? fpDateFilterInstance.selectedDates : [];
-            let startDate = selectedDates.length > 0 ? flatpickr.formatDate(selectedDates[0], "Y-m-d") : "";
-            let endDate = selectedDates.length > 1 ? flatpickr.formatDate(selectedDates[1], "Y-m-d") : startDate;
-            
-            let dateStr = 'AllDates';
-            if (startDate && endDate && startDate !== endDate) {
-                dateStr = `${startDate}_to_${endDate}`;
-            } else if (startDate) {
-                dateStr = startDate;
+            if (total > 0) {
+                const el = document.createElement('textarea'); el.value = txt.trim(); document.body.appendChild(el);
+                el.select(); document.execCommand('copy'); document.body.removeChild(el);
+                showToast("Tersalin", `Berhasil menyalin ${total} AWB.`);
             }
+        });
 
-            link.setAttribute("download", `Report_Potential_Breach_${dateStr}.csv`);
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
+        document.getElementById('exportBtn').addEventListener('click', () => {
+            if(dataTable.classList.contains('hidden') || !window.currentExportData) return;
+            let csv = "data:text/csv;charset=utf-8," + window.currentExportHeaders.map(h => `"${h}"`).join(',') + "\r\n";
+            window.currentExportData.forEach(r => csv += r.map(v => `"${v}"`).join(',') + "\r\n");
+            
+            const dates = fpDateFilterInstance ? fpDateFilterInstance.selectedDates : [];
+            let s = dates.length > 0 ? flatpickr.formatDate(dates[0], "Y-m-d") : "";
+            let e = dates.length > 1 ? flatpickr.formatDate(dates[1], "Y-m-d") : s;
+            let dStr = (s && e && s !== e) ? `${s}_to_${e}` : (s ? s : 'AllDates');
+
+            let a = document.createElement("a"); a.href = encodeURI(csv);
+            a.download = `Report_Potential_Breach_${dStr}.csv`;
+            document.body.appendChild(a); a.click(); document.body.removeChild(a);
         });
     </script>
 </body>
