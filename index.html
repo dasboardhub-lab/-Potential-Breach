@@ -102,12 +102,12 @@
     <main class="flex-1 max-w-[1600px] w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 flex flex-col gap-6 sm:gap-8">
         
         <!-- Control Center (Filter & Metrics Combined) -->
-        <div class="bg-white rounded-3xl shadow-soft border border-zinc-200/60 p-5 sm:p-6 lg:p-8 flex flex-col xl:flex-row gap-8 xl:gap-12 shrink-0">
+        <div class="bg-white rounded-3xl shadow-soft border border-zinc-200/60 p-5 sm:p-6 lg:p-8 flex flex-col gap-6 sm:gap-8 shrink-0">
             
-            <!-- Left: Filter Controls -->
-            <div class="flex-1 flex flex-col lg:flex-row gap-6 lg:gap-8">
+            <!-- Top: Filter Controls -->
+            <div class="flex flex-col md:flex-row gap-6 lg:gap-8 w-full">
                 <!-- Date Range -->
-                <div class="w-full lg:w-1/3 min-w-[250px]">
+                <div class="w-full md:w-1/3 lg:w-1/4 min-w-[250px]">
                     <div class="flex items-center gap-2 mb-3">
                         <div class="w-6 h-6 rounded-full bg-brand-50 flex items-center justify-center text-brand-600"><i class="fa-regular fa-calendar text-xs"></i></div>
                         <label class="block text-xs font-bold text-zinc-500 uppercase tracking-widest">Periode Waktu</label>
@@ -133,12 +133,13 @@
                 </div>
             </div>
 
-            <!-- Right: Divider & Metrics -->
-            <div class="hidden xl:block w-px bg-zinc-100"></div>
+            <!-- Divider -->
+            <div class="w-full h-px bg-zinc-100"></div>
             
-            <div id="stats-container" class="xl:w-[400px] grid grid-cols-2 gap-3 content-start xl:content-center max-h-[160px] overflow-y-auto custom-scrollbar pr-1">
+            <!-- Bottom: Metrics Grid (Responsive) -->
+            <div id="stats-container" class="w-full grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 lg:gap-4 content-start">
                 <!-- Data statistik FOP akan dimuat di sini oleh JS -->
-                <div class="col-span-2 text-sm text-zinc-400 italic py-2 text-center">Menunggu data...</div>
+                <div class="col-span-full text-sm text-zinc-400 italic py-2 text-center">Menunggu data...</div>
             </div>
         </div>
 
@@ -290,6 +291,7 @@
                         <select id="deleteCriteriaSelect" class="w-full border-2 border-zinc-200 rounded-xl px-4 py-3 text-sm font-semibold focus:border-red-400 outline-none bg-white cursor-pointer appearance-none">
                             <option value="bulan">Bulan (EDD)</option>
                             <option value="destinasi">Destinasi (HUB)</option>
+                            <option value="fop">Kategori Grup FOP</option>
                         </select>
                     </div>
                     <div>
@@ -499,8 +501,10 @@
                     if (d.length >= 7) months.add(d.substring(0, 7));
                 });
                 options = Array.from(months).sort().reverse();
-            } else {
+            } else if (criteria === 'destinasi') {
                 options = Array.from(availableHubs).sort();
+            } else if (criteria === 'fop') {
+                options = fopGroupConfig.map(g => g.category).sort();
             }
 
             if (options.length === 0) {
@@ -532,7 +536,24 @@
 
             try {
                 let queryUrl = `${SUPABASE_BASE_URL}awb_data?`;
-                queryUrl += criteria === 'bulan' ? `expect_delivery_tm=like.${value}*` : `destination_uz=like.${value}*`;
+                
+                if (criteria === 'bulan') {
+                    queryUrl += `expect_delivery_tm=like.${value}*`;
+                } else if (criteria === 'destinasi') {
+                    queryUrl += `destination_uz=like.${value}*`;
+                } else if (criteria === 'fop') {
+                    const targetGroup = fopGroupConfig.find(g => g.category === value);
+                    if (targetGroup && targetGroup.items.length > 0) {
+                        // Membungkus setiap nilai dalam tanda kutip dan melakukan encode (API Supabase format IN)
+                        const itemsStr = targetGroup.items.map(item => `"${item}"`).map(encodeURIComponent).join(',');
+                        queryUrl += `fop_code_internal=in.(${itemsStr})`;
+                    } else {
+                        showToast("Gagal", "Keywords FOP di dalam grup ini kosong.", "error");
+                        confirmDeleteBtn.innerHTML = '<i class="fa-solid fa-trash-can"></i> Hapus Permanen';
+                        confirmDeleteBtn.disabled = false;
+                        return;
+                    }
+                }
 
                 const response = await fetch(queryUrl, {
                     method: 'DELETE', headers: { 'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}` }
@@ -673,12 +694,12 @@
             // GANTI STATISTIK BARIS MENJADI DINAMIS PER KATEGORI FOP
             const statsContainer = document.getElementById('stats-container');
             let statsHtml = `
-                <div class="col-span-full flex items-center justify-between p-3 rounded-xl bg-brand-50 border border-brand-100">
-                    <div class="flex items-center gap-3">
-                        <div class="bg-brand-200/50 p-2 rounded-lg text-brand-600"><i class="fa-solid fa-box"></i></div>
+                <div class="col-span-full flex items-center justify-between p-4 rounded-2xl bg-brand-50 border border-brand-100 shadow-sm mb-2">
+                    <div class="flex items-center gap-4">
+                        <div class="bg-brand-200/50 p-3 rounded-xl text-brand-600"><i class="fa-solid fa-box text-lg"></i></div>
                         <div>
-                            <p class="text-[10px] text-brand-700 font-bold uppercase tracking-wider mb-0.5">Total Keseluruhan AWB</p>
-                            <p class="text-xl font-black text-brand-900 leading-none">${totalAwb.size.toLocaleString('id-ID')}</p>
+                            <p class="text-xs text-brand-700 font-bold uppercase tracking-wider mb-1">Total Keseluruhan AWB</p>
+                            <p class="text-2xl font-black text-brand-900 leading-none">${totalAwb.size.toLocaleString('id-ID')}</p>
                         </div>
                     </div>
                 </div>
@@ -687,9 +708,9 @@
             cats.forEach(cat => {
                 let count = catTotals[cat] || 0;
                 statsHtml += `
-                    <div class="flex flex-col justify-center p-3 rounded-xl bg-zinc-50 border border-zinc-100 shadow-sm">
-                        <p class="text-[10px] text-zinc-500 font-bold uppercase tracking-wider mb-1 truncate" title="${cat}">${cat}</p>
-                        <p class="text-lg font-black text-zinc-800 leading-none">${count.toLocaleString('id-ID')}</p>
+                    <div class="flex flex-col justify-center p-4 rounded-2xl bg-white border border-zinc-200 shadow-sm hover:border-brand-300 hover:shadow-md transition-all group">
+                        <p class="text-[10px] text-zinc-500 font-bold uppercase tracking-wider mb-1.5 truncate group-hover:text-brand-600 transition-colors" title="${cat}">${cat}</p>
+                        <p class="text-xl font-black text-zinc-800 leading-none">${count.toLocaleString('id-ID')}</p>
                     </div>
                 `;
             });
@@ -856,6 +877,8 @@
                 if (allNew.length > 0) {
                     await uploadDataToSupabase(allNew);
                     await loadAwbDataFromSupabase();
+                    // Menampilkan pop up notifikasi sukses dengan jumlah baris
+                    showToast("Upload Berhasil", `Berhasil memproses & memperbarui ${allNew.length} baris data CSV.`);
                 } else throw new Error();
             } catch (error) {
                 showToast("Gagal", "Kesalahan saat membaca CSV.", "error");
@@ -869,7 +892,8 @@
                     await fetch(`${SUPABASE_BASE_URL}awb_data`, {
                         method: 'POST', headers: {
                             'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}`,
-                            'Content-Type': 'application/json', 'Prefer': 'return=minimal, resolution=ignore-duplicates'
+                            // MENGUBAH ignore-duplicates menjadi merge-duplicates AGAR BISA TIMPA DATA (UPSERT)
+                            'Content-Type': 'application/json', 'Prefer': 'return=minimal, resolution=merge-duplicates'
                         }, body: JSON.stringify(dataArray.slice(i, i + 1000))
                     });
                 } catch (e) {}
