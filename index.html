@@ -213,11 +213,14 @@
                     </div>
                 </div>
 
-                <div class="flex items-center gap-3 w-full sm:w-auto">
-                    <button id="copyAwbBtn" disabled class="flex-1 sm:flex-none bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 px-5 py-2.5 rounded-xl text-sm font-bold transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed hover:shadow-md">
-                        <i class="fa-regular fa-copy text-slate-400"></i> Salin AWB
+                <div class="flex flex-wrap items-center gap-3 w-full sm:w-auto">
+                    <button id="copyAwbBtn" disabled class="flex-1 sm:flex-none bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 px-4 py-2.5 rounded-xl text-sm font-bold transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed hover:shadow-md" title="Salin hanya deretan nomor resi">
+                        <i class="fa-regular fa-copy text-slate-400"></i> Resi (Murni)
                     </button>
-                    <button id="exportBtn" disabled class="flex-1 sm:flex-none bg-brand-50 hover:bg-brand-600 hover:text-white text-brand-700 border border-brand-200 hover:border-brand-600 px-5 py-2.5 rounded-xl text-sm font-bold transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed hover:shadow-md group">
+                    <button id="copyReportBtn" disabled class="flex-1 sm:flex-none bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 px-4 py-2.5 rounded-xl text-sm font-bold transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed hover:shadow-md" title="Salin dengan format laporan (Hub & Kategori)">
+                        <i class="fa-solid fa-clipboard-list text-brand-500"></i> Laporan (Share)
+                    </button>
+                    <button id="exportBtn" disabled class="flex-1 sm:flex-none bg-brand-50 hover:bg-brand-600 hover:text-white text-brand-700 border border-brand-200 hover:border-brand-600 px-4 py-2.5 rounded-xl text-sm font-bold transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed hover:shadow-md group">
                         <i class="fa-solid fa-download group-hover:animate-bounce"></i> Export CSV
                     </button>
                 </div>
@@ -537,6 +540,7 @@
                     globalRawData = allFetchedData; processInitialData(); renderTable();
                     dateFilter.disabled = false; showDestStagingToggle.disabled = false;
                     document.getElementById('exportBtn').disabled = false; document.getElementById('copyAwbBtn').disabled = false;
+                    if(document.getElementById('copyReportBtn')) document.getElementById('copyReportBtn').disabled = false;
                     showToast("Sistem Siap", `Berhasil memuat ${allFetchedData.length} entri data.`);
                 } else {
                     globalRawData = []; renderTable();
@@ -662,6 +666,7 @@
             });
 
             window.currentGroupedData = groupedData;
+            window.currentFilteredAwbs = Array.from(totalAwb); // Menyimpan kumpulan AWB murni berdasarkan filter
 
             let cats = Object.keys(headerStruct).sort((a, b) => {
                 let al = a.toLowerCase(); let bl = b.toLowerCase();
@@ -866,12 +871,18 @@
                 const results = await Promise.all(promises);
                 results.forEach(fData => {
                     fData.forEach(r => {
-                        if (r['awb_no']) {
+                        // Mendukung format CSV lama maupun baru (awb, destination_hub, latest_op_code)
+                        let awbVal = r['awb'] || r['awb_no'];
+                        
+                        if (awbVal) {
+                            let destHub = r['destination_hub'] || r['destination_uz'] || '';
+                            let fopCode = r['latest_op_code'] || r['fop_code_internal'] || '';
+                            
                             allNew.push({
-                                awb_no: r['awb_no'].toString().trim(),
-                                destination_uz: r['destination_uz'] ? r['destination_uz'].substring(0, 3).toUpperCase() : '',
+                                awb_no: awbVal.toString().trim(),
+                                destination_uz: destHub ? destHub.substring(0, 3).toUpperCase() : '',
                                 destination_staging: r['destination_staging'] || '',
-                                fop_code_internal: r['fop_code_internal'] || '',
+                                fop_code_internal: fopCode,
                                 expect_delivery_tm: r['expect_delivery_tm'] || r['expect_delivery_time'] || ''
                             });
                         }
@@ -1072,31 +1083,76 @@
 
         // --- Export & Copy Logic ---
         document.getElementById('copyAwbBtn').addEventListener('click', () => {
-            if (!window.awbForClipboard || Object.keys(window.awbForClipboard).length === 0) return showToast("Kosong", "Tidak ada matriks AWB untuk disalin.", "error");
+            if (!window.currentFilteredAwbs || window.currentFilteredAwbs.length === 0) {
+                return showToast("Kosong", "Tidak ada matriks AWB untuk disalin.", "error");
+            }
+            
+            // Menggabungkan hanya daftar AWB secara bersih (baris per baris)
+            const textToCopy = window.currentFilteredAwbs.join("\n");
+            
+            const el = document.createElement('textarea'); 
+            el.value = textToCopy; 
+            document.body.appendChild(el);
+            el.select(); 
+            document.execCommand('copy'); 
+            document.body.removeChild(el);
+            
+            showToast("Berhasil Disalin", `Sebanyak ${window.currentFilteredAwbs.length.toLocaleString('id-ID')} resi bersih telah disalin.`);
+        });
+
+        document.getElementById('copyReportBtn').addEventListener('click', () => {
+            if (!window.awbForClipboard || Object.keys(window.awbForClipboard).length === 0) {
+                return showToast("Kosong", "Tidak ada data laporan untuk disalin.", "error");
+            }
+            
+            let reportText = "📊 LAPORAN MATRIKS AWB\n";
             
             const dates = fpDateFilterInstance ? fpDateFilterInstance.selectedDates : [];
-            let s = dates.length > 0 ? flatpickr.formatDate(dates[0], "Y-m-d") : "";
-            let e = dates.length > 1 ? flatpickr.formatDate(dates[1], "Y-m-d") : s;
-            let dTxt = (s && e && s !== e) ? `${s} s.d ${e}` : (s ? s : 'Semua Tanggal');
-            
-            let txt = `Matrix Breach Report - ${dTxt}\n\n`; let total = 0;
-            
-            Object.keys(window.awbForClipboard).sort().forEach(hub => {
-                let hd = window.awbForClipboard[hub]; let ht = `> HUB: ${hub || '(Blank)'}\n`; let hasD = false;
-                ['Mid Mile', 'Transport'].forEach(cat => {
-                    if (hd[cat] && hd[cat].size > 0) {
-                        hasD = true; ht += `  [${cat}]\n`;
-                        hd[cat].forEach(i => { ht += `  - ${i}\n`; total++; });
-                    }
-                });
-                if (hasD) txt += ht + '\n';
+            let s = dates.length > 0 ? flatpickr.formatDate(dates[0], "d M Y") : "";
+            let e = dates.length > 1 ? flatpickr.formatDate(dates[1], "d M Y") : s;
+            if(s) reportText += `📅 Periode: ${s} ${e && e !== s ? '- ' + e : ''}\n`;
+            reportText += `\n`;
+
+            let hubs = Object.keys(window.awbForClipboard).sort();
+            let hasData = false;
+
+            hubs.forEach(hub => {
+                let hubData = window.awbForClipboard[hub];
+                // Cek apakah ada data Mid Mile atau Transport di HUB ini
+                if ((hubData['Mid Mile'] && hubData['Mid Mile'].size > 0) || 
+                    (hubData['Transport'] && hubData['Transport'].size > 0)) {
+                    
+                    hasData = true;
+                    reportText += `📍 ${hub}\n`;
+                    
+                    ['Mid Mile', 'Transport'].forEach(cat => {
+                        if (hubData[cat] && hubData[cat].size > 0) {
+                            reportText += `   [${cat}] :\n`;
+                            
+                            // Urutkan resi agar rapi
+                            let awbs = Array.from(hubData[cat]).sort();
+                            awbs.forEach(item => {
+                                // Item sudah berformat "AWB Opcode" dari window.awbForClipboard
+                                reportText += `   - ${item}\n`;
+                            });
+                            reportText += `\n`;
+                        }
+                    });
+                }
             });
 
-            if (total > 0) {
-                const el = document.createElement('textarea'); el.value = txt.trim(); document.body.appendChild(el);
-                el.select(); document.execCommand('copy'); document.body.removeChild(el);
-                showToast("Berhasil Disalin", `Sebanyak ${total.toLocaleString('id-ID')} AWB telah masuk ke clipboard.`);
+            if (!hasData) {
+                 return showToast("Kosong", "Tidak ada data Mid Mile atau Transport untuk periode ini.", "error");
             }
+
+            const el = document.createElement('textarea'); 
+            el.value = reportText.trim(); 
+            document.body.appendChild(el);
+            el.select(); 
+            document.execCommand('copy'); 
+            document.body.removeChild(el);
+            
+            showToast("Laporan Disalin", "Laporan terstruktur berhasil disalin untuk dibagikan ke tim.");
         });
 
         document.getElementById('exportBtn').addEventListener('click', () => {
