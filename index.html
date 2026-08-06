@@ -905,13 +905,21 @@
         async function uploadDataToSupabase(dataArray) {
             for (let i = 0; i < dataArray.length; i += 1000) {
                 try {
-                    await fetch(`${SUPABASE_BASE_URL}awb_data`, {
+                    // Menambahkan ?on_conflict=awb_no agar database tahu kolom mana yang jadi acuan untuk menimpa data
+                    const res = await fetch(`${SUPABASE_BASE_URL}awb_data?on_conflict=awb_no`, {
                         method: 'POST', headers: {
                             'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}`,
                             'Content-Type': 'application/json', 'Prefer': 'resolution=merge-duplicates'
                         }, body: JSON.stringify(dataArray.slice(i, i + 1000))
                     });
-                } catch (e) {}
+                    
+                    if (!res.ok) {
+                        const err = await res.json();
+                        console.error("Gagal melakukan Upsert ke Supabase:", err);
+                    }
+                } catch (e) {
+                    console.error("Terjadi kesalahan jaringan saat unggah:", e);
+                }
             }
         }
 
