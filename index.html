@@ -53,6 +53,8 @@
     </script>
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+    <!-- Menambahkan Chart.js untuk grafik -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
@@ -189,6 +191,26 @@
             <div class="col-span-full text-sm text-slate-400 font-medium py-12 text-center glass-panel rounded-2xl border border-dashed border-slate-300 flex flex-col items-center gap-3">
                 <i class="fa-solid fa-chart-pie text-3xl text-slate-300"></i>
                 Belum ada data untuk dianalisis
+            </div>
+        </div>
+
+        <!-- Wadah Grafik Baru (Hanya untuk Mid Mile & Transport) -->
+        <div id="chart-section" class="w-full grid grid-cols-1 lg:grid-cols-2 gap-6 opacity-0 animate-slide-up delay-2 hidden">
+            <!-- Donut Chart untuk Origin HUB -->
+            <div class="glass-panel rounded-2xl p-5 shadow-sm flex flex-col h-[300px]">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-sm font-extrabold text-slate-700 flex items-center gap-2"><i class="fa-solid fa-plane-departure text-indigo-500"></i> Distribusi Origin HUB</h3>
+                    <span class="text-[9px] bg-slate-100 text-slate-500 px-2 py-1 rounded-md font-bold uppercase tracking-wider">Mid Mile & Transport</span>
+                </div>
+                <div class="relative flex-1 w-full"><canvas id="originHubChart"></canvas></div>
+            </div>
+            <!-- Bar Chart untuk Service Code -->
+            <div class="glass-panel rounded-2xl p-5 shadow-sm flex flex-col h-[300px]">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-sm font-extrabold text-slate-700 flex items-center gap-2"><i class="fa-solid fa-truck-fast text-brand-500"></i> Distribusi Service Code</h3>
+                    <span class="text-[9px] bg-slate-100 text-slate-500 px-2 py-1 rounded-md font-bold uppercase tracking-wider">Mid Mile & Transport</span>
+                </div>
+                <div class="relative flex-1 w-full"><canvas id="serviceCodeChart"></canvas></div>
             </div>
         </div>
 
@@ -409,6 +431,25 @@
         </div>
     </div>
 
+    <!-- Supabase Schema Error Modal -->
+    <div id="schemaErrorModal" class="hidden fixed inset-0 z-[130] flex items-center justify-center p-4">
+        <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-md transition-opacity" onclick="document.getElementById('schemaErrorModal').classList.add('hidden')"></div>
+        <div class="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden flex flex-col relative z-10 animate-slide-up">
+            <div class="p-8 text-center flex flex-col items-center">
+                <div class="w-16 h-16 bg-rose-100 text-rose-500 rounded-full flex items-center justify-center text-3xl mb-4">
+                    <i class="fa-solid fa-database"></i>
+                </div>
+                <h3 class="font-extrabold text-xl text-slate-900 mb-2">Supabase Cache Error</h3>
+                <p class="text-sm text-slate-500 mb-4">Database menolak data karena kolom baru (<b>origin_hub</b> / <b>service_code</b>) belum ter-refresh di dalam Schema Cache Supabase.</p>
+                <div class="bg-slate-900 text-left p-4 rounded-xl w-full mb-6 text-xs font-mono text-emerald-400 overflow-x-auto shadow-inner">
+                    <span class="text-slate-400 block mb-1">-- Jalankan query ini di SQL Editor Supabase:</span>
+                    NOTIFY pgrst, 'reload schema';
+                </div>
+                <button onclick="document.getElementById('schemaErrorModal').classList.add('hidden')" class="w-full bg-slate-900 hover:bg-slate-800 text-white px-6 py-3 rounded-xl text-sm font-bold transition-all transform hover:-translate-y-1">Saya Mengerti</button>
+            </div>
+        </div>
+    </div>
+
     <script>
         // State variables
         let globalRawData = [];
@@ -418,6 +459,10 @@
         let editingFopIndex = -1;
         let fpDateFilterInstance = null; 
         let isAllSelected = true;
+
+        // Instance Chart.js
+        let originChartInstance = null;
+        let serviceChartInstance = null;
 
         // Supabase Configuration
         const SUPABASE_BASE_URL = 'https://svmgwupvjybfmatjfafp.supabase.co/rest/v1/';
@@ -614,6 +659,11 @@
             
             let filteredRows = 0; let totalAwb = new Set();
             let groupedData = {}; let headerStruct = {}; let catTotals = {}; 
+            
+            // Variabel penampung data grafik
+            let chartOriginData = {};
+            let chartServiceData = {};
+
             window.awbForClipboard = {}; window.currentGroupedData = {};
 
             globalRawData.forEach(row => {
@@ -639,6 +689,15 @@
                 let catLower = category.toLowerCase();
                 let isExpandable = (catLower === 'mid mile' || catLower === 'transport');
                 let subCol = isExpandable ? rawFop : null;
+
+                // Mengumpulkan data khusus untuk Chart (Hanya Mid Mile & Transport)
+                if (isExpandable) {
+                    let oHub = row['origin_hub'] || 'N/A';
+                    let sCode = row['service_code'] || 'N/A';
+                    
+                    chartOriginData[oHub] = (chartOriginData[oHub] || 0) + 1;
+                    chartServiceData[sCode] = (chartServiceData[sCode] || 0) + 1;
+                }
 
                 // Build Clipboard Mapping
                 if (awbNo && isExpandable) {
@@ -835,6 +894,89 @@
             tbodyHtml += `<td class="px-6 py-5 text-right text-base text-brand-300 bg-slate-950 font-black tabular-nums">${grandTotal.toLocaleString('id-ID')}</td></tr>`;
             expTotal.push(grandTotal); window.currentExportData.push(expTotal);
             tableBody.innerHTML = tbodyHtml;
+
+            // Render grafik setelah tabel selesai dihitung
+            drawCharts(chartOriginData, chartServiceData);
+        }
+
+        // --- Fungsi Penggambar Grafik ---
+        function drawCharts(originData, serviceData) {
+            const chartSection = document.getElementById('chart-section');
+            const originCtx = document.getElementById('originHubChart');
+            const serviceCtx = document.getElementById('serviceCodeChart');
+            
+            // Urutkan dari terbanyak ke paling sedikit
+            const sortData = (obj) => Object.entries(obj).sort((a, b) => b[1] - a[1]);
+            const oSorted = sortData(originData);
+            const sSorted = sortData(serviceData);
+
+            // Sembunyikan container jika tidak ada data Transport/Mid Mile
+            if (oSorted.length === 0 && sSorted.length === 0) {
+                chartSection.classList.add('hidden');
+                return;
+            } else {
+                chartSection.classList.remove('hidden');
+            }
+
+            // Warna estetik
+            const colors = ['#14b8a6', '#6366f1', '#0ea5e9', '#8b5cf6', '#ec4899', '#f43f5e', '#f59e0b', '#10b981', '#3b82f6', '#94a3b8'];
+
+            // 1. Chart Origin Hub (Doughnut)
+            if (originChartInstance) originChartInstance.destroy();
+            originChartInstance = new Chart(originCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: oSorted.map(d => d[0]),
+                    datasets: [{
+                        data: oSorted.map(d => d[1]),
+                        backgroundColor: colors,
+                        borderWidth: 0,
+                        hoverOffset: 4
+                    }]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    cutout: '70%',
+                    plugins: { 
+                        legend: { position: 'right', labels: { boxWidth: 12, usePointStyle: true, font: { family: "'Plus Jakarta Sans', sans-serif", size: 11 } } } 
+                    }
+                }
+            });
+
+            // 2. Chart Service Code (Bar Vertikal)
+            if (serviceChartInstance) serviceChartInstance.destroy();
+            serviceChartInstance = new Chart(serviceCtx, {
+                type: 'bar',
+                data: {
+                    labels: sSorted.map(d => d[0]),
+                    datasets: [{
+                        label: 'Total AWB',
+                        data: sSorted.map(d => d[1]),
+                        backgroundColor: '#14b8a6', // brand-500
+                        borderRadius: 6,
+                        barThickness: 'flex',
+                        maxBarThickness: 40
+                    }]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        y: { 
+                            beginAtZero: true, 
+                            grid: { borderDash: [4, 4], color: '#f1f5f9' }, 
+                            ticks: { font: { family: "'Plus Jakarta Sans', sans-serif" } },
+                            border: { display: false }
+                        },
+                        x: { 
+                            grid: { display: false }, 
+                            ticks: { font: { family: "'Plus Jakarta Sans', sans-serif", weight: 'bold' } },
+                            border: { display: false }
+                        }
+                    },
+                    animation: { duration: 1000, easing: 'easeOutQuart' }
+                }
+            });
         }
 
         // --- Event Listeners ---
@@ -876,12 +1018,15 @@
                         
                         if (awbVal) {
                             let destHub = r['destination_hub'] || r['destination_uz'] || '';
+                            let origHub = r['origin_hub'] || r['origin_uz'] || '';
                             let fopCode = r['latest_op_code'] || r['fop_code_internal'] || '';
                             
                             allNew.push({
                                 awb_no: awbVal.toString().trim(),
                                 destination_uz: destHub ? destHub.substring(0, 3).toUpperCase() : '',
                                 destination_staging: r['destination_staging'] || '',
+                                origin_hub: origHub ? origHub.substring(0, 3).toUpperCase() : '',
+                                service_code: (r['service_code'] || r['service'] || '').toString().trim().toUpperCase(),
                                 fop_code_internal: fopCode,
                                 expect_delivery_tm: r['expect_delivery_tm'] || r['expect_delivery_time'] || ''
                             });
@@ -898,27 +1043,28 @@
                 } else throw new Error();
             } catch (error) {
                 hideLoading();
-                showToast("Proses Gagal", "Terjadi kegagalan saat membaca atau mengunggah data.", "error");
+                if (error && error.code === 'PGRST204') {
+                    document.getElementById('schemaErrorModal').classList.remove('hidden');
+                } else {
+                    showToast("Proses Gagal", "Terjadi kegagalan saat membaca atau mengunggah data.", "error");
+                }
             }
         }
 
         async function uploadDataToSupabase(dataArray) {
             for (let i = 0; i < dataArray.length; i += 1000) {
-                try {
-                    // Menambahkan ?on_conflict=awb_no agar database tahu kolom mana yang jadi acuan untuk menimpa data
-                    const res = await fetch(`${SUPABASE_BASE_URL}awb_data?on_conflict=awb_no`, {
-                        method: 'POST', headers: {
-                            'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}`,
-                            'Content-Type': 'application/json', 'Prefer': 'resolution=merge-duplicates'
-                        }, body: JSON.stringify(dataArray.slice(i, i + 1000))
-                    });
-                    
-                    if (!res.ok) {
-                        const err = await res.json();
-                        console.error("Gagal melakukan Upsert ke Supabase:", err);
-                    }
-                } catch (e) {
-                    console.error("Terjadi kesalahan jaringan saat unggah:", e);
+                // Menambahkan ?on_conflict=awb_no agar database tahu kolom mana yang jadi acuan untuk menimpa data
+                const res = await fetch(`${SUPABASE_BASE_URL}awb_data?on_conflict=awb_no`, {
+                    method: 'POST', headers: {
+                        'apikey': supabaseKey, 'Authorization': `Bearer ${supabaseKey}`,
+                        'Content-Type': 'application/json', 'Prefer': 'resolution=merge-duplicates'
+                    }, body: JSON.stringify(dataArray.slice(i, i + 1000))
+                });
+                
+                if (!res.ok) {
+                    const err = await res.json();
+                    console.error("Gagal melakukan Upsert ke Supabase:", err);
+                    throw err; // Lempar error ke atas agar membatalkan proses chunk berikutnya
                 }
             }
         }
